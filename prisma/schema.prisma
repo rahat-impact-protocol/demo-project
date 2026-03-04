@@ -43,6 +43,7 @@ model Beneficiary{
   id       String @id   @default(uuid())
   walletAddress String 
   requestId    String ?
+  disbursementAmount  Int?
   disbursementStatus DisbursementStatus  @default(NOTSTARTED)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime?   @updatedAt
