@@ -21,7 +21,6 @@ model Registry {
   publicKey String
   createdAt DateTime @default(now())
   privateKey String?
-
   @@map("tbl_registry")
 }
 
@@ -36,7 +35,6 @@ model Settings{
   isPrivate      Boolean         @default(true)
 
   @@map("tbl_settings")
-
 }
 
 model Beneficiary{
@@ -52,7 +50,6 @@ model Beneficiary{
   updatedAt    DateTime?   @updatedAt
 
   @@map("tbl_beneficiary")   
-
 }
 
 
@@ -65,8 +62,15 @@ model BeneficiaryPii{
   beneficiary   Beneficiary @relation("BeneficiaryToPii", fields: [beneficiaryId], references: [id])
 
   @@map("tbl_beneficiary_pii")
+}
 
+model BeneficiaryWallet{
+  uuid          String @unique @default(uuid())
+  walletAddress  String @unique
+  keyDetails      String
+  createdAt       DateTime @default(now())
 
+  @@map("tbl_beneficiary_wallet")
 }
 
 
