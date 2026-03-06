@@ -40,15 +40,32 @@ model Settings{
 }
 
 model Beneficiary{
-  id       String @id   @default(uuid())
+  id   Int    @id @default(autoincrement()) @db.Integer()
+  uuid String @unique @default(uuid()) @db.Uuid()
   walletAddress String 
   requestId    String ?
   disbursementAmount  Int?
   disbursementStatus DisbursementStatus  @default(NOTSTARTED)
+  pii                  BeneficiaryPii?        @relation("BeneficiaryToPii")
+
   createdAt    DateTime  @default(now())
   updatedAt    DateTime?   @updatedAt
 
   @@map("tbl_beneficiary")   
+
+}
+
+
+model BeneficiaryPii{
+  beneficiaryId        Int @unique
+  name                 String?
+  phone                String @unique
+  email                String ?
+  extras               Json?  @db.JsonB()
+  beneficiary   Beneficiary @relation("BeneficiaryToPii", fields: [beneficiaryId], references: [id])
+
+  @@map("tbl_beneficiary_pii")
+
 
 }
 
