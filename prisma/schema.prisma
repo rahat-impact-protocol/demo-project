@@ -82,8 +82,10 @@ enum SettingDataType {
 }
 
 enum DisbursementStatus{
-  PENDING
+  CREATED
   FAILED
   DISBURSED
   NOTSTARTED
+  PENDING
+
 }

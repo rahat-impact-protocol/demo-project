@@ -22,7 +22,7 @@ export class DisbursementService {
           },
           data:{
             disbursementAmount:amount,
-            disbursementStatus:DisbursementStatus.PENDING
+            disbursementStatus:DisbursementStatus.CREATED
           }
         })
     }
@@ -59,6 +59,7 @@ export class DisbursementService {
 
 
   async forwardToRegistry() {
+    let disbursementData
     try {
       const projectId = process.env.PROJECT_ID;
       const core = process.env.CORE_URL
@@ -77,13 +78,12 @@ export class DisbursementService {
         }
       });
 
-        const tokenAddress = '0x92a437290E6AE7477955624859C6D15CDb324eD4'
+      const tokenAddress = '0x92a437290E6AE7477955624859C6D15CDb324eD4'
       // const tokenAddress = (contractSettings?.value as any)?.address
-      
-
-      const disbursementData = await this.prisma.beneficiary.findMany({
-        where: {
-          disbursementStatus: DisbursementStatus.PENDING,
+      disbursementData = await this.prisma.$transaction(async (tx)=>{
+        const data = await this.prisma.beneficiary.findMany({
+          where: {
+          disbursementStatus: DisbursementStatus.CREATED,
           disbursementAmount: {
             gt: 0,
           },
@@ -91,8 +91,36 @@ export class DisbursementService {
         select: {
           walletAddress: true,
           disbursementAmount: true,
+          id:true
         },
-      });
+        });
+
+        const ids = data.map(t => t.id);
+
+        await tx.beneficiary.updateMany({
+          where:{
+           id:{in:ids}
+          },
+          data:{
+            disbursementStatus:DisbursementStatus.PENDING
+          }
+        });
+
+        return data;
+      })
+
+      // const disbursementData = await this.prisma.beneficiary.findMany({
+        // where: {
+        //   disbursementStatus: DisbursementStatus.CREATED,
+        //   disbursementAmount: {
+        //     gt: 0,
+        //   },
+        // },
+        // select: {
+        //   walletAddress: true,
+        //   disbursementAmount: true,
+        // },
+      // });
 
       const benAddress = disbursementData.map((d) => d.walletAddress);
       const amount = disbursementData.map((d) => d.disbursementAmount || 0);
@@ -135,6 +163,14 @@ export class DisbursementService {
       if (error.response?.status === 400 || error.response?.status === 404) {
         throw error;
       }
+      //revert back the beneficary data to initial state
+      const ids = disbursementData.map(t=>t.id);
+      await this.prisma.beneficiary.updateMany({
+        where:{id:{in:ids}},
+        data:{
+          disbursementStatus:DisbursementStatus.CREATED
+        }
+      })
       throw new InternalServerErrorException(
         `Failed to forward request to registry: ${error.message}`,
       );

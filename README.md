@@ -1,86 +1,94 @@
 # Demo Project API
 
-NestJS + Prisma API for managing beneficiaries and disbursement requests.
+NestJS + Prisma backend for beneficiary onboarding, wallet key storage, and disbursement request forwarding.
 
-## Base URL
+## Local URLs
 
-When running locally:
+- API: `http://localhost:3000`
+- Swagger: `http://localhost:3000/swagger`
 
-- `http://localhost:3000`
+## Environment Variables
 
-## Modules and Routes
+Set these before running the app:
 
-### 1) Beneficiaries
+- `DATABASE_URL` - PostgreSQL connection string
+- `PUBLIC_KEY` - ECIES public key used to encrypt generated wallet details
+- `PROJECT_ID` - project id used in disbursement request payload
+- `CORE_URL` - core service base URL; disbursement request is sent to `${CORE_URL}/request`
 
-Controller prefix: `/beneficiaries`
+## API Endpoints
+
+### Beneficiaries (`/beneficiaries`)
 
 #### `POST /beneficiaries`
-Create a beneficiary.
+Creates a beneficiary. If `walletAddress` is not provided, the service generates a new wallet and stores encrypted wallet key details in `tbl_beneficiary_wallet`.
 
 Request body (`CreateBeneficiaryDto`):
 
 ```json
 {
-  "walletAddress": "0xa6BCB9C5Dee351c53a877bf42188D28d52CB59eA",
+  "walletAddress": "0x1234...",
+  "name": "Joe",
+  "phone": "+9779800000000",
+  "email": "joe@email.com",
+  "extras": { "id": "123" }
 }
 ```
 
-Field details:
+Field notes:
+- `walletAddress` optional
+- `phone` required and unique in beneficiary PII table
+- `extras` optional JSON object
 
-- `walletAddress` (string, required)
-- `requestId` (string, optional)
-- `disbursementStatus` (enum/string, optional) one of:
-  - `PENDING`
-  - `FAILED`
-  - `DISBURSED`
-  - `NOTSTARTED`
+Creates records in:
+- `tbl_beneficiary`
+- `tbl_beneficiary_pii`
 
 #### `GET /beneficiaries`
-List all beneficiaries.
+Returns all beneficiaries.
 
 #### `DELETE /beneficiaries/:id`
-Delete a beneficiary by database `id`.
+Deletes by beneficiary `uuid` (not numeric `id`).
 
 ---
 
-### 2) Disbursement
-
-Controller prefix: `/disbursement`
+### Disbursement (`/disbursement`)
 
 #### `POST /disbursement`
-Mark selected beneficiaries for disbursement by:
-
-- setting `disbursementAmount`
-- setting `disbursementStatus` to `PENDING`
+Marks beneficiaries for disbursement.
 
 Request body (`CreateDisbursementDto`):
 
 ```json
 {
-  "benAddress": [
-    "0xa6BCB9C5Dee351c53a877bf42188D28d52CB59eA"
-  ],
+  "benAddress": ["0xa6BCB9C5Dee351c53a877bf42188D28d52CB59eA"],
   "amount": 100
 }
 ```
 
-Field details:
-
-- `benAddress` (string[], required): list of beneficiary wallet addresses
-- `amount` (number, required): amount applied to all matching beneficiaries
+Behavior:
+- Finds beneficiaries by `walletAddress in benAddress`
+- Sets `disbursementAmount = amount`
+- Sets `disbursementStatus = CREATED`
 
 #### `POST /disbursement/disburse`
-Build and forward a disbursement request to the registry service.
+Builds a registry payload from created beneficiaries, updates their status to PENDING, and sends the request to core.
 
-Current behavior in service:
+Current behavior:
+- Reads `PROJECT_ID` and `CORE_URL` from env
+- **Uses a Prisma transaction to atomically:**
+  - Query beneficiaries with `disbursementStatus = CREATED` and `disbursementAmount > 0`
+  - Update matching beneficiaries status from `CREATED` → `PENDING`
+  - Return the beneficiary data for payload building
+- Uses `serviceTags` from `@rahat/token-disbursement-actions` (`ACTIONS.DISBURSEMENT.name`)
+- Sends request to `${CORE_URL}/request` using `axios`
+- **On error:** reverts matched beneficiaries status back to `CREATED` for retry
 
-- Uses dynamic `projectId` from the .env
-- Fetches pending beneficiaries with `disbursementAmount > 0`
-- Builds request payload in this format:
+Payload format:
 
 ```json
 {
-  "projectId": "projectId_value",
+  "projectId": "23456",
   "requestData": {
     "data": {
       "tokenAddress": "0x92a437290E6AE7477955624859C6D15CDb324eD4",
@@ -93,24 +101,24 @@ Current behavior in service:
 }
 ```
 
-- Posts to: `http://localhost:3336/request`
-
 #### `GET /disbursement/data?status=<STATUS>&minAmount=<NUMBER>`
-Fetch beneficiaries filtered by:
+Fetches disbursement candidates by status and amount filter.
 
-- `disbursementStatus = status`
-- `disbursementAmount > minAmount`
+Query params:
+- `status` required (`CREATED | PENDING | FAILED | DISBURSED | NOTSTARTED`)
+- `minAmount` optional (default `0`); returns records where amount is greater than this value
 
-Query parameters:
+## Data Models (high level)
 
-- `status` (required): one of `PENDING | FAILED | DISBURSED | NOTSTARTED`
-- `minAmount` (optional, default `0`)
-
-Example:
-
-- `GET /disbursement/data?status=PENDING&minAmount=0`
+- `tbl_beneficiary`: beneficiary core record (`id`, `uuid`, wallet/disbursement fields)
+- `tbl_beneficiary_pii`: beneficiary personal fields (`name`, `phone`, `email`, `extras`)
+- `tbl_beneficiary_wallet`: encrypted wallet key material by wallet address
+- `tbl_registry`: registry configuration
+- `tbl_settings`: app settings (including contract settings)
 
 ## Notes
 
-- Beneficiary and disbursement records are stored via Prisma models (`tbl_beneficiary`, `tbl_registry`, `tbl_settings`).
-- Disbursement forwarding uses `axios` for outbound HTTP calls.
+- Wallet key encryption uses `eciesjs` with secp256k1-compatible keys.
+- If `PUBLIC_KEY` is not a valid ECIES public key, beneficiary wallet creation will fail during encryption.
+- **Disbursement status flow:** `NOTSTARTED` → (optional intermediate states) → `CREATED` (via `POST /disbursement`) → `PENDING` (via `POST /disbursement/disburse`) → `DISBURSED` or `FAILED`
+- **Transaction safety:** `POST /disbursement/disburse` uses a database transaction to atomically update matching beneficiaries from `CREATED` to `PENDING`. If the request to core fails, the status reverts to `CREATED` for safe retry.
