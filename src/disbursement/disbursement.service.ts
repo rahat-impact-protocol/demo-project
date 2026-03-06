@@ -3,6 +3,7 @@ import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { DisbursementRequestDto, CreateDisbursementDto } from './dto/disburse.dto';
 import { DisbursementStatus } from '@prisma/client';
+import{ACTIONS} from '@rahat/token-disbursement-actions';
 
 @Injectable()
 export class DisbursementService {
@@ -59,8 +60,8 @@ export class DisbursementService {
 
   async forwardToRegistry() {
     try {
-      // const projectId = process.env.PROJECT_ID;
-      const projectId ='23456'
+      const projectId = process.env.PROJECT_ID;
+      const core = process.env.CORE_URL
       // Query registry details from database
       const registry = await this.prisma.registry.findUnique({
         where: { id: 'main' },
@@ -115,11 +116,11 @@ export class DisbursementService {
             totalAmount: totalAmount,
           },
         },
-        serviceTags: ['disbursement'],
+        serviceTags: [ACTIONS.DISBURSEMENT.name],
       };
 
       // Post request to registry baseUrl
-      const response = await axios.post(`http://localhost:3336/request`, disbursementRequest, {
+      const response = await axios.post(`${core}/request`, disbursementRequest, {
         headers: {
           'Content-Type': 'application/json',
         },
