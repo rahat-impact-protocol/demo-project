@@ -73,6 +73,18 @@ model BeneficiaryWallet{
   @@map("tbl_beneficiary_wallet")
 }
 
+model Vendor{
+  uuid       String @unique @default(uuid())
+  name       String 
+  phoneNumber String 
+  email       String ?
+  walletAddress String 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime?
+
+
+}
+
 
 enum SettingDataType {
   STRING
