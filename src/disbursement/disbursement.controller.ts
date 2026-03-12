@@ -17,7 +17,7 @@ export class DisbursementController {
     return this.disbursementService.forwardToRegistry();
   }
 
-  @Get('data')
+  @Get()
   async getDisbursementData(
     @Query('status') status: DisbursementStatus,
     @Query('minAmount') minAmount: string = '0',

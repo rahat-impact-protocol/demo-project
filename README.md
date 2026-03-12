@@ -16,6 +16,7 @@ Set these before running the app:
 - `PROJECT_ID` - project id used in disbursement request payload
 - `CORE_URL` - core service base URL; disbursement request is sent to `${CORE_URL}/request`
 
+
 ## API Endpoints
 
 ### Beneficiaries (`/beneficiaries`)
@@ -45,10 +46,40 @@ Creates records in:
 - `tbl_beneficiary_pii`
 
 #### `GET /beneficiaries`
-Returns all beneficiaries.
+Returns paginated beneficiaries. Query params: `page`, `perPage`.
 
 #### `DELETE /beneficiaries/:id`
 Deletes by beneficiary `uuid` (not numeric `id`).
+
+---
+
+### Vendor (`/vendor`)
+
+#### `POST /vendor`
+Creates a vendor. If `walletAddress` is not provided, generates a wallet and stores encrypted wallet key details in `tbl_beneficiary_wallet`.
+
+Request body (`CreateVendorDto`):
+
+```json
+{
+  "name": "Vendor Name",
+  "phoneNumber": "+9779800000000",
+  "email": "vendor@email.com",
+  "walletAddress": "0x1234..." // optional
+}
+```
+
+#### `GET /vendor`
+Returns paginated vendors. Query params: `page`, `perPage`.
+
+#### `GET /vendor/:id`
+Find vendor by uuid.
+
+#### `PATCH /vendor/update/:id`
+Update vendor by uuid. Request body: partial fields of `CreateVendorDto`.
+
+#### `DELETE /vendor/:id`
+Delete vendor by uuid.
 
 ---
 
@@ -101,24 +132,21 @@ Payload format:
 }
 ```
 
-#### `GET /disbursement/data?status=<STATUS>&minAmount=<NUMBER>`
-Fetches disbursement candidates by status and amount filter.
-
-Query params:
-- `status` required (`CREATED | PENDING | FAILED | DISBURSED | NOTSTARTED`)
-- `minAmount` optional (default `0`); returns records where amount is greater than this value
+#### `GET /disbursement`
+Returns paginated disbursement candidates. Query params: `status`, `minAmount`, `page`, `perPage`.
 
 ## Data Models (high level)
 
 - `tbl_beneficiary`: beneficiary core record (`id`, `uuid`, wallet/disbursement fields)
 - `tbl_beneficiary_pii`: beneficiary personal fields (`name`, `phone`, `email`, `extras`)
 - `tbl_beneficiary_wallet`: encrypted wallet key material by wallet address
+- `tbl_vendor`: vendor record (`uuid`, `name`, `phoneNumber`, `email`, `walletAddress`)
 - `tbl_registry`: registry configuration
 - `tbl_settings`: app settings (including contract settings)
 
 ## Notes
 
 - Wallet key encryption uses `eciesjs` with secp256k1-compatible keys.
-- If `PUBLIC_KEY` is not a valid ECIES public key, beneficiary wallet creation will fail during encryption.
+- If `PUBLIC_KEY` is not a valid ECIES public key, beneficiary/vendor wallet creation will fail during encryption.
 - **Disbursement status flow:** `NOTSTARTED` → (optional intermediate states) → `CREATED` (via `POST /disbursement`) → `PENDING` (via `POST /disbursement/disburse`) → `DISBURSED` or `FAILED`
 - **Transaction safety:** `POST /disbursement/disburse` uses a database transaction to atomically update matching beneficiaries from `CREATED` to `PENDING`. If the request to core fails, the status reverts to `CREATED` for safe retry.
