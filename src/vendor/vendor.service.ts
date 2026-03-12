@@ -2,7 +2,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletService } from '../beneficiaries/wallet';
+import { PaginatedResult, PaginateOptions } from '@rumsan/sdk/types/pagination.types';
 import { CreateVendorDto } from './dto/create-vendor.dto';
+import { PaginateFunction,Pagination } from '@rumsan/sdk/types';
 
 @Injectable()
 export class VendorService {
@@ -34,8 +36,26 @@ export class VendorService {
     return vendor;
   }
 
-  async listVendor() {
-    return this.prisma.vendor.findMany();
+  async listVendor(options: PaginateOptions = {}): Promise<PaginatedResult<any>> {
+    const page = Number(options.page) || 1;
+    const perPage = Number(options.perPage) || 10;
+    const skip = (page - 1) * perPage;
+    const [data, total] = await Promise.all([
+      this.prisma.vendor.findMany({ skip, take: perPage }),
+      this.prisma.vendor.count(),
+    ]);
+    const lastPage = Math.ceil(total / perPage);
+    return {
+      data,
+      meta: {
+        total,
+        lastPage,
+        currentPage: page,
+        perPage,
+        prev: page > 1 ? page - 1 : null,
+        next: page < lastPage ? page + 1 : null,
+      },
+    };
   }
 
   async updateVendor(uuid: string, update: any) {

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBeneficiaryDto } from './dto/create-beneficiary.dto';
 import { WalletService } from 'src/beneficiaries/wallet';
+import { PaginatedResult, PaginateOptions } from '@rumsan/sdk/types';
 
 @Injectable()
 export class BeneficiaryService {
@@ -37,8 +38,26 @@ export class BeneficiaryService {
     }
   }
 
-  async listBeneficiaries(): Promise<any> {
-    return this.prisma.beneficiary.findMany();
+  async listBeneficiaries(options: PaginateOptions = {}): Promise<PaginatedResult<any>> {
+    const page = Number(options.page) || 1;
+    const perPage = Number(options.perPage) || 10;
+    const skip = (page - 1) * perPage;
+    const [data, total] = await Promise.all([
+      this.prisma.beneficiary.findMany({ skip, take: perPage }),
+      this.prisma.beneficiary.count(),
+    ]);
+    const lastPage = Math.ceil(total / perPage);
+    return {
+      data,
+      meta: {
+        total,
+        lastPage,
+        currentPage: page,
+        perPage,
+        prev: page > 1 ? page - 1 : null,
+        next: page < lastPage ? page + 1 : null,
+      },
+    };
   }
 
   async deleteBeneficiary(id: string) {
