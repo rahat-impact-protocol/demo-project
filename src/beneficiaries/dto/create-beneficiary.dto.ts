@@ -31,3 +31,25 @@ export class CreateBeneficiaryDto {
 	@IsOptional()
 	extras:JSON
 }
+
+export class CreateBeneficiaryGroupDto{
+	@ApiProperty({example:'Test Group',required:false})
+	@IsString()
+	name:string;
+
+
+	@ApiProperty({example:'Group created for testing',required:true})
+	@IsString()
+	description:string
+
+
+	@ApiProperty({example:'[1,2,3]',required:true})
+	@IsString()
+	beneficiariesId:number[]
+
+
+	
+
+
+
+}

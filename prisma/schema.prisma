@@ -45,6 +45,7 @@ model Beneficiary{
   disbursementAmount  Int?
   disbursementStatus DisbursementStatus  @default(NOTSTARTED)
   pii                  BeneficiaryPii?        @relation("BeneficiaryToPii")
+  group                BeneficiaryGroupMember?  @relation("BeneficiaryGroupMember")
 
   createdAt    DateTime  @default(now())
   updatedAt    DateTime?   @updatedAt
@@ -73,6 +74,7 @@ model BeneficiaryWallet{
   @@map("tbl_beneficiary_wallet")
 }
 
+
 model Vendor{
   uuid       String @unique @default(uuid())
   name       String 
@@ -81,8 +83,28 @@ model Vendor{
   walletAddress String 
   createdAt   DateTime @default(now())
   updatedAt   DateTime?
+}
 
+model BeneficiaryGroup {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime?
+  members     BeneficiaryGroupMember[]
+  @@map("tbl_beneficiary_group")
+}
 
+model BeneficiaryGroupMember {
+  id                Int    @id @default(autoincrement())
+  groupId           Int
+  beneficiaryId     Int     @unique()
+  group             BeneficiaryGroup @relation(fields: [groupId], references: [id])
+  beneficiary       Beneficiary      @relation("BeneficiaryGroupMember", fields: [beneficiaryId], references: [id])
+  joinedAt          DateTime @default(now())
+  @@unique([groupId, beneficiaryId])
+  @@map("tbl_beneficiary_group_member")
 }
 
 
