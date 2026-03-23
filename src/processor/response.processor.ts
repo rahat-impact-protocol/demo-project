@@ -27,11 +27,12 @@ export class ResponseProcessor extends WorkerHost {
   private async processDisbursement(data: any) {
     try {
       const { status, responsePayload, actionPerformed } = data;
+      const walletDetails = responsePayload?.updateData;
       if (status === 'sucess') {
         await this.prisma.beneficiary.updateMany({
           where: {
-            id: {
-              in: [1, 2],
+            walletAddress: {
+              in: walletDetails
             },
           },
           data: {
@@ -42,8 +43,8 @@ export class ResponseProcessor extends WorkerHost {
       else {
         await this.prisma.beneficiary.updateMany({
             where:{
-                id:{
-                    in:[1,3]
+                walletAddress:{
+                    in:walletDetails
                 }
             },
             data:{
