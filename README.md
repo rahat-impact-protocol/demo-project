@@ -15,6 +15,7 @@ Set these before running the app:
 - `PUBLIC_KEY` - ECIES public key used to encrypt generated wallet details
 - `PROJECT_ID` - project id used in disbursement request payload
 - `CORE_URL` - core service base URL; disbursement request is sent to `${CORE_URL}/request`
+- `BENEFICIARY_UPLOAD_CONCURRENCY` - optional; max number of CSV rows processed in parallel during upload. Default: `10`. Benchmarked local sweet spot: `12`.
 
 
 ## API Endpoints
@@ -48,8 +49,60 @@ Creates records in:
 #### `GET /beneficiaries`
 Returns paginated beneficiaries. Query params: `page`, `perPage`.
 
+#### `POST /beneficiaries/upload`
+Uploads beneficiaries from a CSV file.
+
+Validation and behavior:
+- Accepts multipart form-data with file field name `file`
+- Enforced file size limit: `10MB`
+- CSV headers must include `name` and `phone`
+- Uploaded file is decoded from the uploaded buffer as UTF-8 text
+- Phone numbers are checked in bulk before row creation; existing phone numbers are skipped before wallet generation starts
+- Rows are processed with bounded parallelism using `BENEFICIARY_UPLOAD_CONCURRENCY`
+- If a row does not include `walletAddress`, a wallet is generated and encrypted key details are stored in `tbl_beneficiary_wallet`
+
+Supported CSV columns:
+- `name` required
+- `phone` required
+- `email` optional
+- `walletAddress` optional
+- `age` optional; stored inside `extras.age`
+
+Upload response shape:
+
+```json
+{
+  "total": 1000,
+  "created": 940,
+  "skipped": 45,
+  "failedCount": 15,
+  "errors": [
+    "row 12: phone +9779800000000 already exists, skipped",
+    "row 34: Unique constraint failed on the fields: (`phone`)"
+  ],
+  "meta": {
+    "concurrency": 12,
+    "durationMs": 14382
+  }
+}
+```
+
+Notes:
+- `skipped` means the phone number already existed in the database before processing started
+- `failedCount` excludes skipped rows and counts only actual processing failures
+- Large uploads such as `500-1000` rows are processed in waves according to the configured concurrency limit, not all at once
+
 #### `DELETE /beneficiaries/:id`
 Deletes by beneficiary `uuid` (not numeric `id`).
+
+#### `POST /beneficiaries/group`
+Creates a beneficiary group.
+
+#### `GET /beneficiaries/group`
+Lists beneficiary groups.
+
+#### `GET /beneficiaries/group/:id`
+Returns a beneficiary group by numeric id.
 
 ---
 
