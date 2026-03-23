@@ -29,7 +29,7 @@ export class CreateBeneficiaryDto {
 	@ApiProperty({example:'{"id":"123"}',required:false})
 	@IsJSON()
 	@IsOptional()
-	extras:JSON
+	extras?: JSON
 }
 
 export class CreateBeneficiaryGroupDto{

@@ -32,6 +32,9 @@ dependencies:
   axios:
     specifier: ^1.13.6
     version: 1.13.6
+  body-parser:
+    specifier: ^2.2.2
+    version: 2.2.2
   bullmq:
     specifier: ^5.71.0
     version: 5.71.0
@@ -47,6 +50,9 @@ dependencies:
   ethers:
     specifier: ^6.16.0
     version: 6.16.0
+  multer:
+    specifier: ^2.1.1
+    version: 2.1.1
   pg:
     specifier: ^8.19.0
     version: 8.19.0
@@ -4769,6 +4775,16 @@ packages:
       object-assign: 4.1.1
       type-is: 1.6.18
       xtend: 4.0.2
+
+  /multer@2.1.1:
+    resolution: {integrity: sha512-mo+QTzKlx8R7E5ylSXxWzGoXoZbOsRMpyitcht8By2KHvMbf3tjwosZ/Mu/XYU6UuJ3VZnODIrak5ZrPiPyB6A==}
+    engines: {node: '>= 10.16.0'}
+    dependencies:
+      append-field: 1.0.0
+      busboy: 1.6.0
+      concat-stream: 2.0.0
+      type-is: 1.6.18
+    dev: false
 
   /mute-stream@2.0.0:
     resolution: {integrity: sha512-WWdIxpyjEn+FhQJQQv9aQAYlHoNVdzIzUySNV1gHUPDSdZJ3yZn7pAAbQcV7B56Mvu881q9FZV+0Vx2xC44VWA==}

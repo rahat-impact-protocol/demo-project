@@ -1,4 +1,5 @@
 import { NestApplication, NestFactory } from '@nestjs/core';
+import * as bodyParser from 'body-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
@@ -23,6 +24,9 @@ async function bootstrap() {
   }
 
   const port = process.env.PORT || 3000;
+
+  // Allow raw bodies for CSV / binary uploads so REST clients sending a binary body
+  // (Content-Type: text/csv or application/octet-stream) are available on `req.body`.
 
   await app.listen(port);
   _logger.log(`App running in ${port}`);
