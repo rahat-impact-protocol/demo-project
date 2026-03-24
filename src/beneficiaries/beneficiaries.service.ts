@@ -190,7 +190,13 @@ export class BeneficiaryService {
     const perPage = Number(options.perPage) || 10;
     const skip = (page - 1) * perPage;
     const [data, total] = await Promise.all([
-      this.prisma.beneficiary.findMany({ skip, take: perPage }),
+      this.prisma.beneficiary.findMany({ skip, take: perPage ,include:{pii:{
+        select:{
+          name:true,
+          phone:true,
+          email:true
+        }
+      }}}),
       this.prisma.beneficiary.count(),
     ]);
     const lastPage = Math.ceil(total / perPage);
