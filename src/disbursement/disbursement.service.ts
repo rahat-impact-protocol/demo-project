@@ -296,7 +296,12 @@ export class DisbursementService {
           name: 'Contract',
         },
       });
-      const tokenAddress = '0x92a437290E6AE7477955624859C6D15CDb324eD4';
+
+
+      const settings:any = contractSettings?.value;
+      const fundStorageContract= settings?.fundStorageContract?.address;
+      console.log(fundStorageContract);
+      const tokenAddress = settings?.token?.address || '0x92a437290E6AE7477955624859C6D15CDb324eD4';
 
       const disbursementRequest: DisbursementRequestDto = {
         projectId: projectId || '',
@@ -306,6 +311,7 @@ export class DisbursementService {
             benAddress: benAddress,
             amount: amount,
             totalAmount: totalAmount,
+            projectAddress:fundStorageContract
           },
         },
         serviceTags: [ACTIONS.DISBURSEMENT.name],
