@@ -1,17 +1,15 @@
 import {
   Controller,
   Post,
+  Patch,
   Get,
   Delete,
   Body,
   Param,
   UseInterceptors,
   UploadedFile,
-  Req,
   ParseFilePipe,
   MaxFileSizeValidator,
-  FileTypeValidator,
-  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Multer } from 'multer';
@@ -35,20 +33,10 @@ export class BeneficiaryController {
     return this.beneficiaryService.addBeneficiary(body);
   }
 
-  // @Get()
-  // async listBeneficiaries() {
-  //   return this.beneficiaryService.listBeneficiaries();
-  // }
-
-  //added by sushil sushil
   @Get()
-  async listBeneficiaries(@Query() query: { page?: string; perPage?: string }) {
-    return this.beneficiaryService.listBeneficiaries({
-      page: Number(query.page) || 1,
-      perPage: Number(query.perPage) || 10,
-    });
+  async listBeneficiaries() {
+    return this.beneficiaryService.listBeneficiaries();
   }
-  // end
 
   @Delete(':id')
   async deleteBeneficiary(@Param('id') id: string) {
@@ -76,23 +64,41 @@ export class BeneficiaryController {
     )
     file: Multer.File,
   ) {
-    //start add to test for add group beneficiart SUSHIL
-    const summary = await this.beneficiaryService.uploadFromCsv(file.buffer);
-    const result = await this.beneficiaryService.listBeneficiaries({
-      page: 1,
-      perPage: summary.total + summary.skipped, // fetch everything that was in the CSV
-    });
-    return {
-      data: result.data,
-      meta: result.meta,
-      importSummary: summary, // optional — handy for debugging
-    };
-    //end
+    return this.beneficiaryService.uploadFromCsv(file.buffer);
+  }
+
+  @Post('/upload/group')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadCsvAsGroup(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB Limit
+          new CsvFileValidator(),
+
+          // new FileTypeValidator({ fileType: /(text\/csv|application\/vnd.ms-excel)/i}),
+        ],
+        fileIsRequired: true,
+      }),
+    )
+    file: Multer.File,
+  ) {
+    const groupName = file.originalname
+      ? `Imported Group - ${file.originalname.replace(/\.[^/.]+$/, '')}`
+      : undefined;
+    return this.beneficiaryService.uploadFromCsvAsGroup(file.buffer, groupName);
   }
 
   @Get('/group')
   async listGroups() {
     return this.beneficiaryGroupService.listGroups();
+  }
+
+  @Patch('/group/update/:id')
+  async updateGroup(@Param('id') id:number, @Body() body:any){
+    console.log(id,body)
+    return this.beneficiaryGroupService.updateGroup(+id,body)
+
   }
 
   @Get('/group/:id')

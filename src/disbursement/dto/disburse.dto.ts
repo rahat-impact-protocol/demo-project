@@ -5,6 +5,7 @@ export class DisbursementDataDto {
   benAddress: string[];
   amount: number[];
   totalAmount: number;
+  projectAddress:string
 }
 
 export class DisbursementRequestDto {
