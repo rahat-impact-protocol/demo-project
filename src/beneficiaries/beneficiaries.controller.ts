@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Patch,
   Get,
   Delete,
   Body,
@@ -91,6 +92,13 @@ export class BeneficiaryController {
   @Get('/group')
   async listGroups() {
     return this.beneficiaryGroupService.listGroups();
+  }
+
+  @Patch('/group/update/:id')
+  async updateGroup(@Param('id') id:number, @Body() body:any){
+    console.log(id,body)
+    return this.beneficiaryGroupService.updateGroup(+id,body)
+
   }
 
   @Get('/group/:id')
