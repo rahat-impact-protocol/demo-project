@@ -1,4 +1,4 @@
- import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBeneficiaryDto } from './dto/create-beneficiary.dto';
 import { WalletService } from 'src/beneficiaries/wallet';
@@ -46,12 +46,16 @@ export class BeneficiaryService {
   async uploadFromCsv(csv: string | Buffer) {
     const startedAt = Date.now();
     const csvString = Buffer.isBuffer(csv) ? csv.toString('utf8') : csv;
-    if (typeof csvString !== 'string' || !csvString.trim()) throw new Error('Empty CSV');
+    if (typeof csvString !== 'string' || !csvString.trim())
+      throw new Error('Empty CSV');
 
-    const configuredConcurrency = Number(process.env.BENEFICIARY_UPLOAD_CONCURRENCY ?? 10);
-    const concurrency = Number.isFinite(configuredConcurrency) && configuredConcurrency > 0
-      ? Math.floor(configuredConcurrency)
-      : 10;
+    const configuredConcurrency = Number(
+      process.env.BENEFICIARY_UPLOAD_CONCURRENCY ?? 10,
+    );
+    const concurrency =
+      Number.isFinite(configuredConcurrency) && configuredConcurrency > 0
+        ? Math.floor(configuredConcurrency)
+        : 10;
 
     // --- Phase 1: collect all CSV phones for a single bulk duplicate check ---
     const allPhones: string[] = [];
@@ -74,7 +78,10 @@ export class BeneficiaryService {
           phaseHeader = line.split(',').map((h) => h.trim().toLowerCase());
           const expected = ['name', 'phone'];
           const missing = expected.filter((e) => !phaseHeader!.includes(e));
-          if (missing.length) throw new Error(`CSV is missing required headers: ${missing.join(',')}`);
+          if (missing.length)
+            throw new Error(
+              `CSV is missing required headers: ${missing.join(',')}`,
+            );
           continue;
         }
 
@@ -114,16 +121,20 @@ export class BeneficiaryService {
       const phone: string = row['phone'];
       if (existingPhones.has(phone)) {
         skipped += 1;
-        failedArr.push(`row ${rowNumber}: phone ${phone} already exists, skipped`);
+        failedArr.push(
+          `row ${rowNumber}: phone ${phone} already exists, skipped`,
+        );
         return;
       }
 
-      const ageVal = row['age'] && row['age'].length ? Number(row['age']) : undefined;
+      const ageVal =
+        row['age'] && row['age'].length ? Number(row['age']) : undefined;
       const dto: CreateBeneficiaryDto = {
         name: row['name'],
         phone,
         email: row['email'] || undefined,
-        walletAddress: row['walletaddress'] || row['walletAddress'] || undefined,
+        walletAddress:
+          row['walletaddress'] || row['walletAddress'] || undefined,
         extras: ageVal !== undefined ? ({ age: ageVal } as any) : undefined,
       };
 
@@ -160,7 +171,10 @@ export class BeneficiaryService {
         header = line.split(',').map((h) => h.trim().toLowerCase());
         const expected = ['name', 'phone'];
         const missing = expected.filter((e) => !header!.includes(e));
-        if (missing.length) throw new Error(`CSV is missing required headers: ${missing.join(',')}`);
+        if (missing.length)
+          throw new Error(
+            `CSV is missing required headers: ${missing.join(',')}`,
+          );
         continue;
       }
 
@@ -185,12 +199,54 @@ export class BeneficiaryService {
     };
   }
 
-  async listBeneficiaries(options: PaginateOptions = {}): Promise<PaginatedResult<any>> {
+  //added by sushil
+  // async uploadFromCsvAndReturn(csv: string | Buffer) {
+  //   const summary = await this.uploadFromCsv(csv);
+
+  //   const csvString = Buffer.isBuffer(csv) ? csv.toString('utf8') : csv;
+  //   const lines = csvString
+  //     .split(/\r?\n/)
+  //     .map((l) => l.trim())
+  //     .filter(Boolean);
+  //   const header = lines[0]
+  //     .replace(/^\uFEFF/, '')
+  //     .split(',')
+  //     .map((h) => h.trim().toLowerCase());
+  //   const phoneIdx = header.indexOf('phone');
+  //   const phones = lines
+  //     .slice(1)
+  //     .map((line) => line.split(',')[phoneIdx]?.trim())
+  //     .filter((p): p is string => Boolean(p));
+
+  //   const data = await this.prisma.beneficiary.findMany({
+  //     where: { pii: { phone: { in: phones } } },
+  //     include: { pii: { select: { name: true, phone: true, email: true } } },
+  //   });
+
+  //   return { data, importSummary: summary };
+  // }
+  // end
+
+  async listBeneficiaries(
+    options: PaginateOptions = {},
+  ): Promise<PaginatedResult<any>> {
     const page = Number(options.page) || 1;
     const perPage = Number(options.perPage) || 10;
     const skip = (page - 1) * perPage;
     const [data, total] = await Promise.all([
-      this.prisma.beneficiary.findMany({ skip, take: perPage }),
+      this.prisma.beneficiary.findMany({
+        skip,
+        take: perPage,
+        include: {
+          pii: {
+            select: {
+              name: true,
+              phone: true,
+              email: true,
+            },
+          },
+        },
+      }),
       this.prisma.beneficiary.count(),
     ]);
     const lastPage = Math.ceil(total / perPage);

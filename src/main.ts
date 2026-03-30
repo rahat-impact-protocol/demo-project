@@ -19,11 +19,18 @@ async function bootstrap() {
       // )
       .build();
 
+    app.enableCors({
+      origin: 'http://localhost:3000', // your Vite dev server
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
+    });
+
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('swagger', app, document);
   }
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 5001;
 
   // Allow raw bodies for CSV / binary uploads so REST clients sending a binary body
   // (Content-Type: text/csv or application/octet-stream) are available on `req.body`.

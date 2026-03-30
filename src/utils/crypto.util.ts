@@ -1,6 +1,6 @@
 import { PrivateKey } from 'eciesjs';
 import { encrypt as eciesEncrypt, decrypt as eciesDecrypt } from 'eciesjs';
-import { ethers } from 'ethers';
+// import { ethers } from 'ethers';
 
 /**
  * Ethereum key pair structure (secp256k1)
@@ -12,7 +12,7 @@ export interface KeyPair {
 
 /**
  * Generate Ethereum-style keypair (secp256k1) using eciesjs
- * 
+ *
  * @returns KeyPair with hex encoded keys (0x prefix)
  */
 export function generateServiceKeyPair(): KeyPair {
@@ -25,10 +25,9 @@ export function generateServiceKeyPair(): KeyPair {
   };
 }
 
-
 /**
  * Encrypt payload using receiver's Ethereum public key (ECIES)
- * 
+ *
  * @param receiverPublicKey - Hex encoded Ethereum public key (with or without 0x prefix)
  * @param payload - The data to encrypt (object will be JSON stringified)
  * @returns Hex encoded encrypted data (with 0x prefix)
@@ -55,24 +54,25 @@ export function encryptForService(
     pubHex = '04' + pubHex;
   }
 
-  console.log({pubHex})
+  console.log({ pubHex });
 
   const pub = Buffer.from(pubHex, 'hex');
 
-  console.log(pub)
+  console.log(pub);
 
   // Encrypt using ECIES
-  const encrypted = eciesEncrypt(pub,data);
+  const encrypted = eciesEncrypt(pub, data);
 
-  console.log(encrypted)
+  console.log(encrypted);
 
   // Return as hex string with 0x prefix
-  return '0x' + encrypted.toString('hex');
+  // return '0x' + encrypted.toString('hex');
+  return '0x' + Buffer.from(encrypted).toString('hex');
 }
 
 /**
  * Decrypt payload using receiver's Ethereum private key (ECIES)
- * 
+ *
  * @param receiverPrivateKey - Hex encoded Ethereum private key (with or without 0x prefix)
  * @param encryptedHex - Hex encoded encrypted data (with or without 0x prefix)
  * @returns Decrypted payload as object (parsed from JSON)
@@ -89,12 +89,13 @@ export function decryptFromService(
   const decrypted = eciesDecrypt(priv, encrypted);
 
   // Parse JSON and return
-  return JSON.parse(decrypted.toString('utf8'));
+  // return JSON.parse(decrypted.toString('utf8'));
+  return JSON.parse(Buffer.from(decrypted).toString('utf8'));
 }
 
 /**
  * Decrypt payload and return as Buffer
- * 
+ *
  * @param receiverPrivateKey - Hex encoded Ethereum private key (with or without 0x prefix)
  * @param encryptedHex - Hex encoded encrypted data (with or without 0x prefix)
  * @returns Decrypted payload as Buffer
@@ -106,12 +107,14 @@ export function decryptFromServiceAsBuffer(
   const priv = Buffer.from(receiverPrivateKey.replace(/^0x/, ''), 'hex');
   const encrypted = Buffer.from(encryptedHex.replace(/^0x/, ''), 'hex');
 
-  return eciesDecrypt(priv, encrypted);
+  // return eciesDecrypt(priv, encrypted);
+  const decrypted = eciesDecrypt(priv, encrypted);
+  return Buffer.from(decrypted);
 }
 
 /**
  * Decrypt payload and return as string (UTF-8)
- * 
+ *
  * @param receiverPrivateKey - Hex encoded Ethereum private key (with or without 0x prefix)
  * @param encryptedHex - Hex encoded encrypted data (with or without 0x prefix)
  * @returns Decrypted payload as string
@@ -120,6 +123,7 @@ export function decryptFromServiceAsString(
   receiverPrivateKey: string,
   encryptedHex: string,
 ): string {
-  return decryptFromServiceAsBuffer(receiverPrivateKey, encryptedHex).toString('utf8');
+  return decryptFromServiceAsBuffer(receiverPrivateKey, encryptedHex).toString(
+    'utf8',
+  );
 }
-
