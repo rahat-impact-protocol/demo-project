@@ -44,6 +44,21 @@ export class BeneficiaryService {
   }
 
   async uploadFromCsv(csv: string | Buffer) {
+    return this.importFromCsv(csv, { createGroup: false });
+  }
+
+  async uploadFromCsvAsGroup(csv: string | Buffer, groupName?: string, groupDescription?: string) {
+    return this.importFromCsv(csv, {
+      createGroup: true,
+      groupName,
+      groupDescription,
+    });
+  }
+
+  private async importFromCsv(
+    csv: string | Buffer,
+    options: { createGroup: boolean; groupName?: string; groupDescription?: string },
+  ) {
     const startedAt = Date.now();
     const csvString = Buffer.isBuffer(csv) ? csv.toString('utf8') : csv;
     if (typeof csvString !== 'string' || !csvString.trim()) throw new Error('Empty CSV');
@@ -53,12 +68,8 @@ export class BeneficiaryService {
       ? Math.floor(configuredConcurrency)
       : 10;
 
-    // --- Phase 1: collect all CSV phones for a single bulk duplicate check ---
     const allPhones: string[] = [];
-    const allLines: { line: string; lineNumber: number }[] = [];
-
     {
-      let phaseLineNumber = 0;
       let phaseHeader: string[] | null = null;
       const phaseReader = readline.createInterface({
         input: Readable.from([csvString]),
@@ -66,7 +77,6 @@ export class BeneficiaryService {
       });
 
       for await (const rawLine of phaseReader) {
-        phaseLineNumber += 1;
         const line = rawLine.trim();
         if (!line) continue;
 
@@ -82,20 +92,17 @@ export class BeneficiaryService {
         const phoneIdx = phaseHeader.indexOf('phone');
         const phone = cols[phoneIdx]?.trim();
         if (phone) allPhones.push(phone);
-        allLines.push({ line, lineNumber: phaseLineNumber });
       }
 
       if (!phaseHeader) throw new Error('CSV has no data');
     }
 
-    // Single bulk query — much cheaper than one query per row
     const existingRows = await this.prisma.beneficiaryPii.findMany({
       where: { phone: { in: allPhones } },
       select: { phone: true },
     });
     const existingPhones = new Set(existingRows.map((r) => r.phone));
 
-    // --- Phase 2: process rows, skipping known duplicates ---
     let csvLineNumber = 0;
     let total = 0;
     let created = 0;
@@ -103,6 +110,7 @@ export class BeneficiaryService {
     const failedArr: string[] = [];
     let header: string[] | null = null;
     const inFlight = new Set<Promise<void>>();
+    const createdBeneficiaryIds: number[] = [];
 
     const processLine = async (line: string, rowNumber: number) => {
       const cols = line.split(',').map((c) => c.trim());
@@ -128,7 +136,11 @@ export class BeneficiaryService {
       };
 
       try {
-        await this.addBeneficiary(dto);
+        const createdRow = await this.addBeneficiary(dto);
+        const beneficiary = Array.isArray(createdRow) ? createdRow[0] : createdRow;
+        if (options.createGroup && beneficiary?.id) {
+          createdBeneficiaryIds.push(beneficiary.id);
+        }
         created += 1;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
@@ -172,6 +184,28 @@ export class BeneficiaryService {
 
     if (!header) throw new Error('CSV has no data');
 
+    let group: { id: number; uuid: string; name: string } | null = null;
+    if (options.createGroup && createdBeneficiaryIds.length > 0) {
+      const uniqueBenIds = [...new Set(createdBeneficiaryIds)];
+      const createdGroup = await this.prisma.beneficiaryGroup.create({
+        data: {
+          name: options.groupName || `Imported Group ${new Date().toISOString()}`,
+          description: options.groupDescription || 'Auto-created from CSV beneficiary import',
+          members: {
+            createMany: {
+              data: uniqueBenIds.map((beneficiaryId) => ({ beneficiaryId })),
+            },
+          },
+        },
+        select: {
+          id: true,
+          uuid: true,
+          name: true,
+        },
+      });
+      group = createdGroup;
+    }
+
     return {
       total,
       created,
@@ -181,6 +215,7 @@ export class BeneficiaryService {
       meta: {
         concurrency,
         durationMs: Date.now() - startedAt,
+        group,
       },
     };
   }
@@ -216,4 +251,5 @@ export class BeneficiaryService {
   async deleteBeneficiary(id: string) {
     return this.prisma.beneficiary.delete({ where: { uuid: id } });
   }
+
 }
