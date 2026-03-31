@@ -1,6 +1,6 @@
  import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateBeneficiaryDto } from './dto/create-beneficiary.dto';
+import { CreateBeneficiaryDto, ListBeneficiaryDto } from './dto/create-beneficiary.dto';
 import { WalletService } from 'src/beneficiaries/wallet';
 import { PaginatedResult, PaginateOptions } from '@rumsan/sdk/types';
 import * as readline from 'node:readline';
@@ -220,9 +220,9 @@ export class BeneficiaryService {
     };
   }
 
-  async listBeneficiaries(options: PaginateOptions = {}): Promise<PaginatedResult<any>> {
-    const page = Number(options.page) || 1;
-    const perPage = Number(options.perPage) || 10;
+  async listBeneficiaries(options?: ListBeneficiaryDto): Promise<PaginatedResult<any>> {
+    const page = Number(options?.page) || 1;
+    const perPage = Number(options?.perPage) || 10;
     const skip = (page - 1) * perPage;
     const [data, total] = await Promise.all([
       this.prisma.beneficiary.findMany({ skip, take: perPage ,include:{pii:{

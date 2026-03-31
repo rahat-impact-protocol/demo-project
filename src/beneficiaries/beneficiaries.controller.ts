@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseInterceptors,
   UploadedFile,
   ParseFilePipe,
@@ -17,6 +18,7 @@ import { BeneficiaryService } from './beneficiaries.service';
 import {
   CreateBeneficiaryDto,
   CreateBeneficiaryGroupDto,
+  ListBeneficiaryDto,
 } from './dto/create-beneficiary.dto';
 import { BeneficiaryGroupService } from './beneficiaries.group.service';
 import { CsvFileValidator } from './filevalidator';
@@ -37,8 +39,10 @@ export class BeneficiaryController {
   }
 
   @Get()
-  async listBeneficiaries() {
-    return this.beneficiaryService.listBeneficiaries();
+  async listBeneficiaries(
+    @Query() data?: ListBeneficiaryDto,
+  ) {
+    return this.beneficiaryService.listBeneficiaries(data);
   }
 
   @Delete(':id')
