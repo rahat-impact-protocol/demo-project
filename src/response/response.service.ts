@@ -11,7 +11,7 @@ export class ResponseService {
   ) {}
   async receiveResponse(data: any) {
     console.log(data);
-    this.jobQueue.add(PROCESSOR_JOB.DISBURSEMENT, data);
+    this.jobQueue.add(data?.actionPerformed, data);
     return { status: 'queued' };
   }
 }

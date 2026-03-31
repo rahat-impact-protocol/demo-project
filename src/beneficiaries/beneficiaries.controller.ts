@@ -20,12 +20,15 @@ import {
 } from './dto/create-beneficiary.dto';
 import { BeneficiaryGroupService } from './beneficiaries.group.service';
 import { CsvFileValidator } from './filevalidator';
+import { BeneficiarySmsService } from './beneficiaries.sms.service';
+import { SendBulkSms, SendSms } from './dto/beneficiary.sms.dto';
 
 @Controller('beneficiaries')
 export class BeneficiaryController {
   constructor(
     private readonly beneficiaryService: BeneficiaryService,
     private readonly beneficiaryGroupService: BeneficiaryGroupService,
+    private readonly beneficiarySmsService: BeneficiarySmsService
   ) {}
 
   @Post()
@@ -96,7 +99,6 @@ export class BeneficiaryController {
 
   @Patch('/group/update/:id')
   async updateGroup(@Param('id') id:number, @Body() body:any){
-    console.log(id,body)
     return this.beneficiaryGroupService.updateGroup(+id,body)
 
   }
@@ -104,5 +106,19 @@ export class BeneficiaryController {
   @Get('/group/:id')
   async getGroupById(@Param('id') id: number) {
     return this.beneficiaryGroupService.getGroupById(+id);
+  }
+
+  //sms service for beneficiary
+
+  @Post('/sms')
+  async sendSms(@Body() data:SendSms){
+    return this.beneficiarySmsService.sendSms(data);
+
+  }
+
+  @Post('/bulksms')
+  async sendBulkSms(@Body()data:SendBulkSms){
+    return this.beneficiarySmsService.sendBulkSms(data)
+
   }
 }
