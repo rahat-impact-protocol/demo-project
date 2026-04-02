@@ -10,6 +10,7 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Multer } from 'multer';
@@ -34,8 +35,11 @@ export class BeneficiaryController {
   }
 
   @Get()
-  async listBeneficiaries() {
-    return this.beneficiaryService.listBeneficiaries();
+  async listBeneficiaries(
+    @Query('page') page?: string,
+    @Query('perPage') perPage?: string,
+  ) {
+    return this.beneficiaryService.listBeneficiaries({ page: page ? Number(page) : undefined, perPage: perPage ? Number(perPage) : undefined });
   }
 
   @Delete(':id')
