@@ -40,9 +40,7 @@ export class BeneficiaryController {
   }
 
   @Get()
-  async listBeneficiaries(
-    @Query() data?: ListBeneficiaryDto,
-  ) {
+  async listBeneficiaries(@Query() data?: ListBeneficiaryDto) {
     return this.beneficiaryService.listBeneficiaries(data);
   }
 
