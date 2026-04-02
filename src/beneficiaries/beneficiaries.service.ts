@@ -47,7 +47,11 @@ export class BeneficiaryService {
     return this.importFromCsv(csv, { createGroup: false });
   }
 
-  async uploadFromCsvAsGroup(csv: string | Buffer, groupName?: string, groupDescription?: string) {
+  async uploadFromCsvAsGroup(
+    csv: string | Buffer,
+    groupName?: string,
+    groupDescription?: string,
+  ) {
     return this.importFromCsv(csv, {
       createGroup: true,
       groupName,
@@ -57,7 +61,11 @@ export class BeneficiaryService {
 
   private async importFromCsv(
     csv: string | Buffer,
-    options: { createGroup: boolean; groupName?: string; groupDescription?: string },
+    options: {
+      createGroup: boolean;
+      groupName?: string;
+      groupDescription?: string;
+    },
   ) {
     const startedAt = Date.now();
     const csvString = Buffer.isBuffer(csv) ? csv.toString('utf8') : csv;
@@ -148,7 +156,9 @@ export class BeneficiaryService {
 
       try {
         const createdRow = await this.addBeneficiary(dto);
-        const beneficiary = Array.isArray(createdRow) ? createdRow[0] : createdRow;
+        const beneficiary = Array.isArray(createdRow)
+          ? createdRow[0]
+          : createdRow;
         if (options.createGroup && beneficiary?.id) {
           createdBeneficiaryIds.push(beneficiary.id);
         }
@@ -203,8 +213,11 @@ export class BeneficiaryService {
       const uniqueBenIds = [...new Set(createdBeneficiaryIds)];
       const createdGroup = await this.prisma.beneficiaryGroup.create({
         data: {
-          name: options.groupName || `Imported Group ${new Date().toISOString()}`,
-          description: options.groupDescription || 'Auto-created from CSV beneficiary import',
+          name:
+            options.groupName || `Imported Group ${new Date().toISOString()}`,
+          description:
+            options.groupDescription ||
+            'Auto-created from CSV beneficiary import',
           members: {
             createMany: {
               data: uniqueBenIds.map((beneficiaryId) => ({ beneficiaryId })),
@@ -265,6 +278,7 @@ export class BeneficiaryService {
   async listBeneficiaries(
     options: PaginateOptions = {},
   ): Promise<PaginatedResult<any>> {
+    console.log(options)
     const page = Number(options.page) || 1;
     const perPage = Number(options.perPage) || 10;
     const skip = (page - 1) * perPage;
@@ -301,5 +315,4 @@ export class BeneficiaryService {
   async deleteBeneficiary(id: string) {
     return this.prisma.beneficiary.delete({ where: { uuid: id } });
   }
-
 }
