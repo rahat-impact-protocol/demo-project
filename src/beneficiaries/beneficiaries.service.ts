@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateBeneficiaryDto } from './dto/create-beneficiary.dto';
+import { CreateBeneficiaryDto, ListBeneficiaryDto } from './dto/create-beneficiary.dto';
 import { WalletService } from 'src/beneficiaries/wallet';
 import { PaginatedResult, PaginateOptions } from '@rumsan/sdk/types';
 import * as readline from 'node:readline';
@@ -247,40 +247,9 @@ export class BeneficiaryService {
     };
   }
 
-  //added by sushil
-  // async uploadFromCsvAndReturn(csv: string | Buffer) {
-  //   const summary = await this.uploadFromCsv(csv);
-
-  //   const csvString = Buffer.isBuffer(csv) ? csv.toString('utf8') : csv;
-  //   const lines = csvString
-  //     .split(/\r?\n/)
-  //     .map((l) => l.trim())
-  //     .filter(Boolean);
-  //   const header = lines[0]
-  //     .replace(/^\uFEFF/, '')
-  //     .split(',')
-  //     .map((h) => h.trim().toLowerCase());
-  //   const phoneIdx = header.indexOf('phone');
-  //   const phones = lines
-  //     .slice(1)
-  //     .map((line) => line.split(',')[phoneIdx]?.trim())
-  //     .filter((p): p is string => Boolean(p));
-
-  //   const data = await this.prisma.beneficiary.findMany({
-  //     where: { pii: { phone: { in: phones } } },
-  //     include: { pii: { select: { name: true, phone: true, email: true } } },
-  //   });
-
-  //   return { data, importSummary: summary };
-  // }
-  // end
-
-  async listBeneficiaries(
-    options: PaginateOptions = {},
-  ): Promise<PaginatedResult<any>> {
-    console.log(options)
-    const page = Number(options.page) || 1;
-    const perPage = Number(options.perPage) || 10;
+  async listBeneficiaries(options?: ListBeneficiaryDto): Promise<PaginatedResult<any>> {
+    const page = Number(options?.page) || 1;
+    const perPage = Number(options?.perPage) || 10;
     const skip = (page - 1) * perPage;
     const [data, total] = await Promise.all([
       this.prisma.beneficiary.findMany({

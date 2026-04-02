@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { DisbursementStatus } from '@prisma/client';
-import { IsString, IsOptional, IsJSON } from 'class-validator';
+import { IsString, IsOptional, IsJSON, IsNumber } from 'class-validator';
 
 export class CreateBeneficiaryDto {
   @ApiProperty({ example: '0x1234', required: false })
@@ -40,4 +40,17 @@ export class CreateBeneficiaryGroupDto {
   @ApiProperty({ example: '[1,2,3]', required: true })
   @IsString()
   beneficiariesId: number[];
+}
+
+export class ListBeneficiaryDto{
+	@ApiProperty({example:1,required:false})
+	@IsNumber()
+	@IsOptional()
+	page: number;
+
+	@ApiProperty({example:1,required:false})
+	@IsNumber()
+	@IsOptional()
+	perPage: number;
+
 }

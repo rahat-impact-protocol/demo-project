@@ -17,21 +17,89 @@ import { ACTIONS } from '@rahat/token-disbursement-actions';
 export class DisbursementService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async createDisbursementRecord(
+    prisma: any,
+    beneficiaryIds: number[],
+    amountPerBen: number,
+    totalben?:number,
+    totalamount?:number
+
+  ) {
+    const totalBen = totalben || beneficiaryIds.length;
+    const totalAmount =  totalamount ||amountPerBen * totalBen;
+
+    return prisma.disbursement.create({
+      data: {
+        amountPerBen,
+        totalAmount,
+        totalBen,
+        benDisbursement: {
+          create: beneficiaryIds.map((id) => ({
+            benId: id,
+          })),
+        },
+      },
+      include: {
+        benDisbursement: true,
+      },
+    });
+  }
+
   async createDisbursement(payload: CreateDisbursementDto) {
     try {
-      const { benAddress, amount } = payload;
-      await this.prisma.beneficiary.updateMany({
-        where: {
-          walletAddress: {
-            in: benAddress,
+      const { benAddress, amount,totalAmount,totalBen } = payload;
+
+      const disbursement = await this.prisma.$transaction(async (tx) => {
+        const beneficiaries = await tx.beneficiary.findMany({
+          where: {
+            walletAddress: {
+              in: benAddress,
+            },
           },
-        },
-        data: {
-          disbursementAmount: amount,
-          disbursementStatus: DisbursementStatus.CREATED,
-        },
+          select: {
+            id: true,
+          },
+        });
+
+        if (!beneficiaries.length) {
+          throw new BadRequestException('No beneficiaries found for provided addresses');
+        }
+
+        const beneficiaryIds = beneficiaries.map((beneficiary) => beneficiary.id);
+
+        const createdDisbursement = await this.createDisbursementRecord(
+          tx,
+          beneficiaryIds,
+          amount,
+          totalBen,
+          totalAmount
+        );
+
+        await tx.beneficiary.updateMany({
+          where: {
+            id: {
+              in: beneficiaryIds,
+            },
+          },
+          data: {
+            disbursementAmount: amount,
+            disbursementStatus: DisbursementStatus.CREATED,
+          },
+        });
+
+        return createdDisbursement;
       });
+
+      return {
+        status: 'success',
+        message: 'Disbursement prepared',
+        data: disbursement,
+      };
     } catch (err) {
+      if (err instanceof BadRequestException) {
+        throw err;
+      }
+
       throw new InternalServerErrorException(
         `Failed to create disbursement ${err}`,
       );
@@ -57,6 +125,10 @@ export class DisbursementService {
 
       return beneficiaries;
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException(
         `Failed to fetch disbursement data: ${error.message}`,
       );
@@ -65,21 +137,164 @@ export class DisbursementService {
 
   async createGroupDisbursement(payload: CreateGroupDisbursementDto) {
     try {
-      const { groupId, amount } = payload;
-      await this.prisma.beneficiary.updateMany({
-        where: {
-          group: {
+      const { groupId, amount,totalBen,totalAmount } = payload;
+
+      const disbursement = await this.prisma.$transaction(async (tx) => {
+        const members = await tx.beneficiaryGroupMember.findMany({
+          where: {
             groupId: groupId,
           },
-        },
-        data: {
-          disbursementAmount: amount,
-          disbursementStatus: DisbursementStatus.CREATED,
-        },
+          select: {
+            beneficiaryId: true,
+          },
+        });
+
+        if (!members.length) {
+          throw new BadRequestException('No beneficiaries found in the provided group');
+        }
+
+        const beneficiaryIds = members.map((member) => member.beneficiaryId);
+
+        const createdDisbursement = await this.createDisbursementRecord(
+          tx,
+          beneficiaryIds,
+          amount,
+          totalBen,
+          totalAmount
+        );
+
+        await tx.beneficiary.updateMany({
+          where: {
+            id: {
+              in: beneficiaryIds,
+            },
+          },
+          data: {
+            disbursementAmount: amount,
+            disbursementStatus: DisbursementStatus.CREATED,
+          },
+        });
+
+        return createdDisbursement;
       });
+
+      return {
+        status: 'success',
+        message: 'Group disbursement prepared',
+        data: disbursement,
+      };
     } catch (err) {
+      if (err instanceof BadRequestException) {
+        throw err;
+      }
+
       throw new InternalServerErrorException(
         `Failed to create disbursement ${err}`,
+      );
+    }
+  }
+  async executeDisbursement(disbursementUuid: string) {
+    let beneficiaryIds: number[] = [];
+
+    try {
+      const disbursementData = await this.prisma.$transaction(async (tx) => {
+        const data = await tx.disbursement.findUnique({
+          where: {
+            uuid: disbursementUuid,
+          },
+          include: {
+            benDisbursement: {
+              include: {
+                beneficiary: {
+                  select: {
+                    id: true,
+                    walletAddress: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (!data) {
+          throw new BadRequestException('Disbursement not found');
+        }
+
+        const beneficiaries = data.benDisbursement.map((item) => item.beneficiary);
+        const ids = beneficiaries.map((beneficiary) => beneficiary.id);
+
+        if (!ids.length) {
+          throw new BadRequestException('No beneficiaries linked to disbursement');
+        }
+
+        await tx.beneficiary.updateMany({
+          where: {
+            id: {
+              in: ids,
+            },
+          },
+          data: {
+            disbursementStatus: DisbursementStatus.PENDING,
+            disbursementAmount: data.amountPerBen,
+          },
+        });
+
+        return {
+          uuid: data.uuid,
+          amountPerBen: data.amountPerBen,
+          totalAmount: data.totalAmount,
+          beneficiaries,
+        };
+      });
+
+      beneficiaryIds = disbursementData.beneficiaries.map((beneficiary) => beneficiary.id);
+
+      const benAddress = disbursementData.beneficiaries.map(
+        (beneficiary) => beneficiary.walletAddress,
+      );
+      const amount = disbursementData.beneficiaries.map(
+        () => disbursementData.amountPerBen,
+      );
+
+      const response = await this.forwardToRegistry(
+        benAddress,
+        amount,
+        disbursementData.totalAmount,
+      );
+
+      return {
+        status: 'success',
+        message: 'Disbursement execution initiated',
+        disbursementUuid: disbursementData.uuid,
+        data: response,
+      };
+    } catch (err) {
+      if (
+        beneficiaryIds.length &&
+        !(err.response?.status === 400 || err.response?.status === 404)
+      ) {
+        await this.prisma.beneficiary.updateMany({
+          where: {
+            id: {
+              in: beneficiaryIds,
+            },
+          },
+          data: {
+            disbursementStatus: DisbursementStatus.CREATED,
+          },
+        });
+      }
+
+      if (err instanceof BadRequestException) {
+        throw err;
+      }
+
+      if (err.response?.status === 400 || err.response?.status === 404) {
+        throw err;
+      }
+
+      throw new InternalServerErrorException(
+        `Failed to execute disbursement: ${err.message}`,
       );
     }
   }
@@ -134,15 +349,15 @@ export class DisbursementService {
         return data;
       });
 
-      console.log(disbursementData)
-      if(disbursementData?.length ===0 ){
+      console.log(disbursementData);
+      if (disbursementData?.length === 0) {
         throw new BadRequestException('No data found for disbursement');
       }
 
       const benAddress = disbursementData.map((d) => d.walletAddress);
       const amount = disbursementData.map((d) => d.disbursementAmount || 0);
       const totalAmount = amount.reduce((acc, curr) => acc + curr, 0);
-      this.forwardToRegistry(benAddress, amount, totalAmount);
+      await this.forwardToRegistry(benAddress, amount, totalAmount);
 
       // Validate required fields
       // if (!payload.tokenAddress || !details. || !payload.amount || !payload?.projectId) {
@@ -153,13 +368,15 @@ export class DisbursementService {
         throw error;
       }
       //revert back the beneficary data to initial state
-      const ids = disbursementData.map((t) => t.id);
-      await this.prisma.beneficiary.updateMany({
-        where: { id: { in: ids } },
-        data: {
-          disbursementStatus: DisbursementStatus.CREATED,
-        },
-      });
+      if (disbursementData?.length) {
+        const ids = disbursementData.map((t) => t.id);
+        await this.prisma.beneficiary.updateMany({
+          where: { id: { in: ids } },
+          data: {
+            disbursementStatus: DisbursementStatus.CREATED,
+          },
+        });
+      }
       throw new InternalServerErrorException(
         `Failed to forward request to registry: ${error.message}`,
       );
@@ -185,7 +402,7 @@ export class DisbursementService {
     const amount = [Number(data?.disbursementAmount)];
     const totalAmount = Number(amount);
 
-    this.forwardToRegistry(benAddress, amount, totalAmount);
+    await this.forwardToRegistry(benAddress, amount, totalAmount);
   }
 
   async disburseToGroup(groupId: number) {
@@ -206,7 +423,8 @@ export class DisbursementService {
             },
           },
         });
-        const ids = data.map((t) => t.id);
+        const beneficiaries = data.map((member) => member.beneficiary);
+        const ids = beneficiaries.map((beneficiary) => beneficiary.id);
 
         await tx.beneficiary.updateMany({
           where: {
@@ -216,26 +434,36 @@ export class DisbursementService {
             disbursementStatus: DisbursementStatus.PENDING,
           },
         });
-        return data;
+        return beneficiaries;
       });
+
+      if (!benData.length) {
+        throw new BadRequestException('No beneficiaries found for disbursement');
+      }
 
       const benAddress = benData.map((d) => d.walletAddress);
       const amount = benData.map((d) => d.disbursementAmount || 0);
       const totalAmount = amount.reduce((acc, curr) => acc + curr, 0);
 
-      this.forwardToRegistry(benAddress, amount, totalAmount);
+      await this.forwardToRegistry(benAddress, amount, totalAmount);
     } catch (err) {
       if (err.response?.status === 400 || err.response?.status === 404) {
         throw err;
       }
       //revert back the beneficary data to initial state
-      const ids = benData.map((t) => t.id);
-      await this.prisma.beneficiary.updateMany({
-        where: { id: { in: ids } },
-        data: {
-          disbursementStatus: DisbursementStatus.CREATED,
-        },
-      });
+      if (benData?.length) {
+        const ids = benData.map((t) => t.id);
+        await this.prisma.beneficiary.updateMany({
+          where: { id: { in: ids } },
+          data: {
+            disbursementStatus: DisbursementStatus.CREATED,
+          },
+        });
+      }
+
+      throw new InternalServerErrorException(
+        `Failed to disburse to group: ${err.message}`,
+      );
     }
   }
 
@@ -255,23 +483,47 @@ export class DisbursementService {
             disbursementAmount: true,
           },
         });
+
+        const ids = data.map((beneficiary) => beneficiary.id);
+
+        await tx.beneficiary.updateMany({
+          where: {
+            id: { in: ids },
+          },
+          data: {
+            disbursementStatus: DisbursementStatus.PENDING,
+          },
+        });
+
+        return data;
       });
+
+      if (!benData.length) {
+        throw new BadRequestException('No beneficiaries found for disbursement');
+      }
+
       const benAddress = benData.map((d) => d.walletAddress);
       const amount = benData.map((d) => d.disbursementAmount || 0);
       const totalAmount = amount.reduce((acc, curr) => acc + curr, 0);
-      this.forwardToRegistry(benAddress, amount, totalAmount);
+      await this.forwardToRegistry(benAddress, amount, totalAmount);
     } catch (err) {
       if (err.response?.status === 400 || err.response?.status === 404) {
         throw err;
       }
       //revert back the beneficary data to initial state
-      const ids = benData.map((t) => t.id);
-      await this.prisma.beneficiary.updateMany({
-        where: { id: { in: ids } },
-        data: {
-          disbursementStatus: DisbursementStatus.CREATED,
-        },
-      });
+      if (benData?.length) {
+        const ids = benData.map((t) => t.id);
+        await this.prisma.beneficiary.updateMany({
+          where: { id: { in: ids } },
+          data: {
+            disbursementStatus: DisbursementStatus.CREATED,
+          },
+        });
+      }
+
+      throw new InternalServerErrorException(
+        `Failed to disburse to selected beneficiaries: ${err.message}`,
+      );
     }
   }
 
@@ -298,10 +550,11 @@ export class DisbursementService {
       });
 
 
-      const settings:any = contractSettings?.value;
-      const fundStorageContract= settings?.fundStorageContract?.address;
+      const settings: any = contractSettings?.value;
+      const fundStorageContract = settings?.fundStorageContract?.address;
       console.log(fundStorageContract);
-      const tokenAddress = settings?.token?.address || '0x92a437290E6AE7477955624859C6D15CDb324eD4';
+      const tokenAddress =
+        settings?.token?.address || '0x92a437290E6AE7477955624859C6D15CDb324eD4';
 
       const disbursementRequest: DisbursementRequestDto = {
         projectId: projectId || '',
@@ -311,13 +564,13 @@ export class DisbursementService {
             benAddress: benAddress,
             amount: amount,
             totalAmount: totalAmount,
-            projectAddress:fundStorageContract
+            projectAddress: fundStorageContract,
           },
         },
         serviceTags: [ACTIONS.DISBURSEMENT.name],
       };
 
-       // Post request to registry baseUrl
+      // Post request to registry baseUrl
 
       const response = await axios.post(
         `${core}/request`,
