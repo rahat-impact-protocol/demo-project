@@ -28,7 +28,19 @@ export class BeneficiaryGroupService {
   async getGroupById(id: number) {
     return this.prisma.beneficiaryGroup.findUnique({
       where: { id },
-      include: { members: { include: { beneficiary: true } } },
+      //this is added by sushil
+      include: {
+        members: {
+          include: {
+            beneficiary: {
+              include: {
+                pii: true, // <--- This pulls in the name, phone, email, etc.
+              },
+            },
+          },
+        },
+      },
+      // include: { members: { include: { beneficiary: true } } },
     });
   }
 
