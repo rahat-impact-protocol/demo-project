@@ -20,25 +20,26 @@ export class DisbursementController {
     return this.disbursementService.createGroupDisbursement(payload);
   }
 
-  @Post('disburse')
-  async disburse() {
-    return this.disbursementService.alldisburse();
+  @Post('disburse/:uuid')
+  async disburse(@Param('uuid')disbursementId:string) {
+    console.log(disbursementId)
+    return this.disbursementService.executeDisbursement(disbursementId);
   }
 
-  @Post('disburse/ben/:id')
-  async disburseToBen(@Param('id') id: string) {
-    return this.disbursementService.disburseToBen(id);
-  }
+  // @Post('disburse/ben/:id')
+  // async disburseToBen(@Param('id') id: string) {
+  //   return this.disbursementService.disburseToBen(id);
+  // }
 
-  @Post('disburse/group/:groupId')
-  async disburseToGroup(@Param('groupId') groupId: number) {
-    return this.disbursementService.disburseToGroup(+groupId);
-  }
+  // @Post('disburse/group/:groupId')
+  // async disburseToGroup(@Param('groupId') groupId: number) {
+  //   return this.disbursementService.disburseToGroup(+groupId);
+  // }
 
-  @Post('disburse/beneficiaries')
-  async disburseToBeneficiaries(@Body() benId: string[]) {
-    return this.disbursementService.disburseToMultiBen(benId);
-  }
+  // @Post('disburse/beneficiaries')
+  // async disburseToBeneficiaries(@Body() benId: string[]) {
+  //   return this.disbursementService.disburseToMultiBen(benId);
+  // }
 
   @Get()
   async getDisbursementData(

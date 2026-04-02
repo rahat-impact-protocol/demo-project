@@ -6,7 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
- // output   = "../node_modules/@prisma/client"
+  // output   = "../node_modules/@prisma/client"
 }
 
 datasource db {
@@ -14,18 +14,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model Registry {
-  id        String   @id @default("main")
-  baseUrl  String
-  publicKey String
-  createdAt DateTime @default(now())
+  id         String   @id @default("main")
+  baseUrl    String
+  publicKey  String
+  createdAt  DateTime @default(now())
   privateKey String?
+
   @@map("tbl_registry")
 }
 
-
-model Settings{
+model Settings {
   id             String          @default(uuid())
   name           String          @id @unique
   value          Json
@@ -37,76 +36,102 @@ model Settings{
   @@map("tbl_settings")
 }
 
-model Beneficiary{
-  id   Int    @id @default(autoincrement()) @db.Integer()
-  uuid String @unique @default(uuid()) @db.Uuid()
-  walletAddress String 
-  requestId    String ?
-  disbursementAmount  Int?
-  disbursementStatus DisbursementStatus  @default(NOTSTARTED)
-  pii                  BeneficiaryPii?        @relation("BeneficiaryToPii")
-  group                BeneficiaryGroupMember?  @relation("BeneficiaryGroupMember")
+model Beneficiary {
+  id                 Int                     @id @default(autoincrement()) @db.Integer()
+  uuid               String                  @unique @default(uuid())
+  walletAddress      String
+  requestId          String?
+  disbursementAmount Int?
+  disbursementStatus DisbursementStatus      @default(NOTSTARTED)
+  pii                BeneficiaryPii?         @relation("BeneficiaryToPii")
+  group              BeneficiaryGroupMember? @relation("BeneficiaryGroupMember")
+  disbursement       BenDisbursement[]       @relation("BeneficiaryDisbursements")
 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime?   @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
 
-  @@map("tbl_beneficiary")   
+  @@map("tbl_beneficiary")
 }
 
+model Disbursement {
+  id              Int               @id @default(autoincrement()) @db.Integer()
+  uuid            String            @unique @default(uuid())
+  totalAmount     Int
+  amountPerBen    Int
+  totalBen        Int
+  benDisbursement BenDisbursement[] @relation("DisbursementBenDisbursements")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime?         @updatedAt
 
-model BeneficiaryPii{
-  beneficiaryId        Int @unique
-  name                 String?
-  phone                String @unique
-  email                String ?
-  extras               Json?  @db.JsonB()
+  @@map("tbl_disbursement")
+}
+
+model BenDisbursement {
+  id             Int          @id @default(autoincrement()) @db.Integer()
+  uuid           String       @unique @default(uuid())
+  disbursementId Int
+  benId          Int
+  beneficiary    Beneficiary  @relation("BeneficiaryDisbursements", fields: [benId], references: [id])
+  disbursement   Disbursement @relation("DisbursementBenDisbursements", fields: [disbursementId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime?    @updatedAt
+
+  @@map("tbl_ben_disbursement")
+}
+
+model BeneficiaryPii {
+  beneficiaryId Int         @unique
+  name          String?
+  phone         String      @unique
+  email         String?
+  extras        Json?       @db.JsonB()
   beneficiary   Beneficiary @relation("BeneficiaryToPii", fields: [beneficiaryId], references: [id])
 
   @@map("tbl_beneficiary_pii")
 }
 
-model BeneficiaryWallet{
-  uuid          String @unique @default(uuid())
-  walletAddress  String @unique
-  keyDetails      String
-  createdAt       DateTime @default(now())
+model BeneficiaryWallet {
+  uuid          String   @unique @default(uuid())
+  walletAddress String   @unique
+  keyDetails    String
+  createdAt     DateTime @default(now())
 
   @@map("tbl_beneficiary_wallet")
 }
 
-
-model Vendor{
-  uuid       String @unique @default(uuid())
-  name       String 
-  phoneNumber String 
-  email       String ?
-  walletAddress String 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime?
+model Vendor {
+  uuid          String    @unique @default(uuid())
+  name          String
+  phoneNumber   String
+  email         String?
+  walletAddress String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime?
 }
 
 model BeneficiaryGroup {
-  id          Int      @id @default(autoincrement())
-  uuid        String   @unique @default(uuid())
+  id          Int                      @id @default(autoincrement())
+  uuid        String                   @unique @default(uuid())
   name        String
   description String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime                 @default(now())
   updatedAt   DateTime?
   members     BeneficiaryGroupMember[]
+
   @@map("tbl_beneficiary_group")
 }
 
 model BeneficiaryGroupMember {
-  id                Int    @id @default(autoincrement())
-  groupId           Int
-  beneficiaryId     Int     @unique()
-  group             BeneficiaryGroup @relation(fields: [groupId], references: [id])
-  beneficiary       Beneficiary      @relation("BeneficiaryGroupMember", fields: [beneficiaryId], references: [id])
-  joinedAt          DateTime @default(now())
+  id            Int              @id @default(autoincrement())
+  groupId       Int
+  beneficiaryId Int              @unique()
+  group         BeneficiaryGroup @relation(fields: [groupId], references: [id])
+  beneficiary   Beneficiary      @relation("BeneficiaryGroupMember", fields: [beneficiaryId], references: [id])
+  joinedAt      DateTime         @default(now())
+
   @@unique([groupId, beneficiaryId])
   @@map("tbl_beneficiary_group_member")
 }
-
 
 enum SettingDataType {
   STRING
@@ -115,11 +140,10 @@ enum SettingDataType {
   OBJECT
 }
 
-enum DisbursementStatus{
+enum DisbursementStatus {
   CREATED
   FAILED
   DISBURSED
   NOTSTARTED
   PENDING
-
 }
