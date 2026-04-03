@@ -21,12 +21,11 @@ export class DisbursementService {
     prisma: any,
     beneficiaryIds: number[],
     amountPerBen: number,
-    totalben?:number,
-    totalamount?:number
-
+    totalben?: number,
+    totalamount?: number,
   ) {
     const totalBen = totalben || beneficiaryIds.length;
-    const totalAmount =  totalamount ||amountPerBen * totalBen;
+    const totalAmount = totalamount || amountPerBen * totalBen;
 
     return prisma.disbursement.create({
       data: {
@@ -47,7 +46,7 @@ export class DisbursementService {
 
   async createDisbursement(payload: CreateDisbursementDto) {
     try {
-      const { benAddress, amount,totalAmount,totalBen } = payload;
+      const { benAddress, amount, totalAmount, totalBen } = payload;
 
       const disbursement = await this.prisma.$transaction(async (tx) => {
         const beneficiaries = await tx.beneficiary.findMany({
@@ -62,17 +61,21 @@ export class DisbursementService {
         });
 
         if (!beneficiaries.length) {
-          throw new BadRequestException('No beneficiaries found for provided addresses');
+          throw new BadRequestException(
+            'No beneficiaries found for provided addresses',
+          );
         }
 
-        const beneficiaryIds = beneficiaries.map((beneficiary) => beneficiary.id);
+        const beneficiaryIds = beneficiaries.map(
+          (beneficiary) => beneficiary.id,
+        );
 
         const createdDisbursement = await this.createDisbursementRecord(
           tx,
           beneficiaryIds,
           amount,
           totalBen,
-          totalAmount
+          totalAmount,
         );
 
         await tx.beneficiary.updateMany({
@@ -137,7 +140,7 @@ export class DisbursementService {
 
   async createGroupDisbursement(payload: CreateGroupDisbursementDto) {
     try {
-      const { groupId, amount,totalBen,totalAmount } = payload;
+      const { groupId, amount, totalBen, totalAmount } = payload;
 
       const disbursement = await this.prisma.$transaction(async (tx) => {
         const members = await tx.beneficiaryGroupMember.findMany({
@@ -150,7 +153,9 @@ export class DisbursementService {
         });
 
         if (!members.length) {
-          throw new BadRequestException('No beneficiaries found in the provided group');
+          throw new BadRequestException(
+            'No beneficiaries found in the provided group',
+          );
         }
 
         const beneficiaryIds = members.map((member) => member.beneficiaryId);
@@ -160,7 +165,7 @@ export class DisbursementService {
           beneficiaryIds,
           amount,
           totalBen,
-          totalAmount
+          totalAmount,
         );
 
         await tx.beneficiary.updateMany({
@@ -220,11 +225,15 @@ export class DisbursementService {
           throw new BadRequestException('Disbursement not found');
         }
 
-        const beneficiaries = data.benDisbursement.map((item) => item.beneficiary);
+        const beneficiaries = data.benDisbursement.map(
+          (item) => item.beneficiary,
+        );
         const ids = beneficiaries.map((beneficiary) => beneficiary.id);
 
         if (!ids.length) {
-          throw new BadRequestException('No beneficiaries linked to disbursement');
+          throw new BadRequestException(
+            'No beneficiaries linked to disbursement',
+          );
         }
 
         await tx.beneficiary.updateMany({
@@ -247,7 +256,9 @@ export class DisbursementService {
         };
       });
 
-      beneficiaryIds = disbursementData.beneficiaries.map((beneficiary) => beneficiary.id);
+      beneficiaryIds = disbursementData.beneficiaries.map(
+        (beneficiary) => beneficiary.id,
+      );
 
       const benAddress = disbursementData.beneficiaries.map(
         (beneficiary) => beneficiary.walletAddress,
@@ -438,7 +449,9 @@ export class DisbursementService {
       });
 
       if (!benData.length) {
-        throw new BadRequestException('No beneficiaries found for disbursement');
+        throw new BadRequestException(
+          'No beneficiaries found for disbursement',
+        );
       }
 
       const benAddress = benData.map((d) => d.walletAddress);
@@ -499,7 +512,9 @@ export class DisbursementService {
       });
 
       if (!benData.length) {
-        throw new BadRequestException('No beneficiaries found for disbursement');
+        throw new BadRequestException(
+          'No beneficiaries found for disbursement',
+        );
       }
 
       const benAddress = benData.map((d) => d.walletAddress);
@@ -549,12 +564,12 @@ export class DisbursementService {
         },
       });
 
-
       const settings: any = contractSettings?.value;
       const fundStorageContract = settings?.fundStorageContract?.address;
       console.log(fundStorageContract);
       const tokenAddress =
-        settings?.token?.address || '0x92a437290E6AE7477955624859C6D15CDb324eD4';
+        settings?.token?.address ||
+        '0x92a437290E6AE7477955624859C6D15CDb324eD4';
 
       const disbursementRequest: DisbursementRequestDto = {
         projectId: projectId || '',

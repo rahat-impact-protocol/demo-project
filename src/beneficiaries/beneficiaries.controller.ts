@@ -11,7 +11,6 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
-  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Multer } from 'multer';
@@ -31,7 +30,7 @@ export class BeneficiaryController {
   constructor(
     private readonly beneficiaryService: BeneficiaryService,
     private readonly beneficiaryGroupService: BeneficiaryGroupService,
-    private readonly beneficiarySmsService: BeneficiarySmsService
+    private readonly beneficiarySmsService: BeneficiarySmsService,
   ) {}
 
   @Post()
@@ -101,9 +100,8 @@ export class BeneficiaryController {
   }
 
   @Patch('/group/update/:id')
-  async updateGroup(@Param('id') id:number, @Body() body:any){
-    return this.beneficiaryGroupService.updateGroup(+id,body)
-
+  async updateGroup(@Param('id') id: number, @Body() body: any) {
+    return this.beneficiaryGroupService.updateGroup(+id, body);
   }
 
   @Get('/group/:id')
@@ -114,14 +112,12 @@ export class BeneficiaryController {
   //sms service for beneficiary
 
   @Post('/sms')
-  async sendSms(@Body() data:SendSms){
+  async sendSms(@Body() data: SendSms) {
     return this.beneficiarySmsService.sendSms(data);
-
   }
 
   @Post('/bulksms')
-  async sendBulkSms(@Body()data:SendBulkSms){
-    return this.beneficiarySmsService.sendBulkSms(data)
-
+  async sendBulkSms(@Body() data: SendBulkSms) {
+    return this.beneficiarySmsService.sendBulkSms(data);
   }
 }

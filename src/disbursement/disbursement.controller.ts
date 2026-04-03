@@ -21,8 +21,8 @@ export class DisbursementController {
   }
 
   @Post('disburse/:uuid')
-  async disburse(@Param('uuid')disbursementId:string) {
-    console.log(disbursementId)
+  async disburse(@Param('uuid') disbursementId: string) {
+    console.log(disbursementId);
     return this.disbursementService.executeDisbursement(disbursementId);
   }
 

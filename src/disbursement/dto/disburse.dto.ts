@@ -1,12 +1,12 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional } from 'class-validator';
 
 export class DisbursementDataDto {
   tokenAddress: string;
   benAddress: string[];
   amount: number[];
   totalAmount: number;
-  projectAddress:string
+  projectAddress: string;
 }
 
 export class DisbursementRequestDto {
@@ -20,31 +20,22 @@ export class DisbursementRequestDto {
 export class CreateDisbursementDto {
   benAddress: string[];
   amount: number;
-  totalBen?:number;
-  totalAmount?:number;
+  totalBen?: number;
+  totalAmount?: number;
 }
 
-export class CreateGroupDisbursementDto{
+export class CreateGroupDisbursementDto {
+  @ApiProperty({ example: '2', required: true })
+  groupId: number;
 
-  @ApiProperty({example:'2', required:true})
-  groupId:number;
-  
+  @ApiProperty({ example: '20', required: true })
+  amount: number;
 
-  @ApiProperty({example:'20', required:true})
-  amount:number;
-
-  @ApiProperty({example:'5', required:true})
+  @ApiProperty({ example: '5', required: true })
   @IsOptional()
-  totalBen?:number;
+  totalBen?: number;
 
-  @ApiProperty({example:'100', required:true})
+  @ApiProperty({ example: '100', required: true })
   @IsOptional()
-  totalAmount?:number;
-
-
-
-  
+  totalAmount?: number;
 }
-
-
-
