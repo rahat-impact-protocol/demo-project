@@ -30,7 +30,7 @@
     "@prisma/adapter-pg": "^6.1.0",
     "@prisma/client": "^6.1.0",
     "@rumsan/sdk": "0.0.47",
-    "axios": "^1.13.6",
+    "axios": "1.13.6",
     "body-parser": "^2.2.2",
     "bullmq": "^5.71.0",
     "class-validator": "^0.15.1",
