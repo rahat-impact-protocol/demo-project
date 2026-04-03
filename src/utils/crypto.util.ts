@@ -67,6 +67,7 @@ export function encryptForService(
   console.log(encrypted)
 
   // Return as hex string with 0x prefix
+  //@ts-ignore
   return '0x' + encrypted.toString('hex');
 }
 
@@ -89,6 +90,7 @@ export function decryptFromService(
   const decrypted = eciesDecrypt(priv, encrypted);
 
   // Parse JSON and return
+  //@ts-ignore
   return JSON.parse(decrypted.toString('utf8'));
 }
 
@@ -105,7 +107,7 @@ export function decryptFromServiceAsBuffer(
 ): Buffer {
   const priv = Buffer.from(receiverPrivateKey.replace(/^0x/, ''), 'hex');
   const encrypted = Buffer.from(encryptedHex.replace(/^0x/, ''), 'hex');
-
+  //@ts-ignore
   return eciesDecrypt(priv, encrypted);
 }
 

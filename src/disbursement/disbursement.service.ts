@@ -200,9 +200,15 @@ export class DisbursementService {
       const data = await this.prisma.disbursement.findUnique({where:{
         uuid
       },
-      include:{
+      select:{
+        uuid:true,
+        amountPerBen:true,
+        totalAmount:true,
+        totalBen:true,
+        createdAt:true,
+        updatedAt:true,
         benDisbursement:{
-          include:{
+          select:{
             beneficiary:{
               select:{
                 walletAddress:true,
@@ -210,20 +216,13 @@ export class DisbursementService {
                 
               }
             }
-          }
+          },
+          
         }
       }
     })
-    const disbursementDetails = {
-      uuid:data?.uuid,
-      benDetails:data?.benDisbursement,
-      amountPerBen:data?.amountPerBen,
-      createdAt:data?.createdAt,
-      updatedAt:data?.updatedAt,
-      totalBen:data?.totalBen,
-      totalAmount:data?.totalAmount
-    }
-    return disbursementDetails;
+   
+    return data;
     }
     catch(err){
       console.log(err);
