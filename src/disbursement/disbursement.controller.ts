@@ -26,6 +26,11 @@ export class DisbursementController {
     return this.disbursementService.executeDisbursement(disbursementId);
   }
 
+  @Get('/:id')
+  async getDisbursementDetails(@Param('id')uuid:string){
+    return this.disbursementService.getDisbursementDetails(uuid)
+  }
+
   // @Post('disburse/ben/:id')
   // async disburseToBen(@Param('id') id: string) {
   //   return this.disbursementService.disburseToBen(id);

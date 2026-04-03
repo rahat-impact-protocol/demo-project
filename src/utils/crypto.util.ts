@@ -66,8 +66,8 @@ export function encryptForService(
   console.log(encrypted);
 
   // Return as hex string with 0x prefix
-  // return '0x' + encrypted.toString('hex');
-  return '0x' + Buffer.from(encrypted).toString('hex');
+  //@ts-ignore
+  return '0x' + encrypted.toString('hex');
 }
 
 /**
@@ -89,8 +89,8 @@ export function decryptFromService(
   const decrypted = eciesDecrypt(priv, encrypted);
 
   // Parse JSON and return
-  // return JSON.parse(decrypted.toString('utf8'));
-  return JSON.parse(Buffer.from(decrypted).toString('utf8'));
+  //@ts-ignore
+  return JSON.parse(decrypted.toString('utf8'));
 }
 
 /**
@@ -106,10 +106,8 @@ export function decryptFromServiceAsBuffer(
 ): Buffer {
   const priv = Buffer.from(receiverPrivateKey.replace(/^0x/, ''), 'hex');
   const encrypted = Buffer.from(encryptedHex.replace(/^0x/, ''), 'hex');
-
-  // return eciesDecrypt(priv, encrypted);
-  const decrypted = eciesDecrypt(priv, encrypted);
-  return Buffer.from(decrypted);
+  //@ts-ignore
+  return eciesDecrypt(priv, encrypted);
 }
 
 /**

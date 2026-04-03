@@ -138,6 +138,7 @@ export class DisbursementService {
     }
   }
 
+
   async createGroupDisbursement(payload: CreateGroupDisbursementDto) {
     try {
       const { groupId, amount, totalBen, totalAmount } = payload;
@@ -196,6 +197,41 @@ export class DisbursementService {
       throw new InternalServerErrorException(
         `Failed to create disbursement ${err}`,
       );
+    }
+  }
+
+  async getDisbursementDetails(uuid:string){
+    try{
+      const data = await this.prisma.disbursement.findUnique({where:{
+        uuid
+      },
+      select:{
+        uuid:true,
+        amountPerBen:true,
+        totalAmount:true,
+        totalBen:true,
+        createdAt:true,
+        updatedAt:true,
+        benDisbursement:{
+          select:{
+            beneficiary:{
+              select:{
+                walletAddress:true,
+                disbursementStatus:true
+                
+              }
+            }
+          },
+          
+        }
+      }
+    })
+   
+    return data;
+    }
+    catch(err){
+      console.log(err);
+      throw new InternalServerErrorException(`failed to load the disbursement for ${uuid}: ${err.message}`)
     }
   }
   async executeDisbursement(disbursementUuid: string) {
