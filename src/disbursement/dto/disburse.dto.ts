@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger";
+import { IsOptional } from "class-validator";
+import { DisbursementType } from "@prisma/client";
 
 export class DisbursementDataDto {
   tokenAddress: string;
@@ -20,8 +21,10 @@ export class DisbursementRequestDto {
 export class CreateDisbursementDto {
   benAddress: string[];
   amount: number;
-  totalBen?: number;
-  totalAmount?: number;
+  totalBen?:number;
+  totalAmount?:number;
+  name?:string
+  type?:DisbursementType
 }
 
 export class CreateGroupDisbursementDto {
@@ -35,7 +38,16 @@ export class CreateGroupDisbursementDto {
   @IsOptional()
   totalBen?: number;
 
-  @ApiProperty({ example: '100', required: true })
+  @ApiProperty({example:'100', required:false})
   @IsOptional()
-  totalAmount?: number;
+  totalAmount?:number;
+
+
+  @ApiProperty({example:'test disbursement', required:false})
+  @IsOptional()
+  name?:string;
+
+  @ApiProperty({example:'test disbursement', required:false})
+  @IsOptional()
+  type?:DisbursementType; 
 }

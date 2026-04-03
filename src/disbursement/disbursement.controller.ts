@@ -48,12 +48,8 @@ export class DisbursementController {
 
   @Get()
   async getDisbursementData(
-    @Query('status') status: DisbursementStatus,
-    @Query('minAmount') minAmount: string = '0',
+   
   ) {
-    return this.disbursementService.getDisbursementData(
-      status,
-      parseInt(minAmount, 10),
-    );
+    return this.disbursementService.listDisbursement();
   }
 }
