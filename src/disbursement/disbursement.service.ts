@@ -10,7 +10,7 @@ import {
   CreateDisbursementDto,
   CreateGroupDisbursementDto,
 } from './dto/disburse.dto';
-import { DisbursementStatus } from '@prisma/client';
+import { DisbursementStatus, DisbursementType } from '@prisma/client';
 import { ACTIONS } from '@rahat/token-disbursement-actions';
 
 @Injectable()
@@ -22,7 +22,9 @@ export class DisbursementService {
     beneficiaryIds: number[],
     amountPerBen: number,
     totalben?:number,
-    totalamount?:number
+    totalamount?:number,
+    name?:string,
+    type?:DisbursementType
 
   ) {
     const totalBen = totalben || beneficiaryIds.length;
@@ -30,6 +32,8 @@ export class DisbursementService {
 
     return prisma.disbursement.create({
       data: {
+        name,
+        type,
         amountPerBen,
         totalAmount,
         totalBen,
@@ -47,7 +51,7 @@ export class DisbursementService {
 
   async createDisbursement(payload: CreateDisbursementDto) {
     try {
-      const { benAddress, amount,totalAmount,totalBen } = payload;
+      const { benAddress, amount,totalAmount,totalBen,name,type } = payload;
 
       const disbursement = await this.prisma.$transaction(async (tx) => {
         const beneficiaries = await tx.beneficiary.findMany({
@@ -72,7 +76,9 @@ export class DisbursementService {
           beneficiaryIds,
           amount,
           totalBen,
-          totalAmount
+          totalAmount,
+          name,
+          type
         );
 
         await tx.beneficiary.updateMany({
@@ -106,39 +112,10 @@ export class DisbursementService {
     }
   }
 
-  async getDisbursementData(status: DisbursementStatus, minAmount: number = 0) {
-    try {
-      const beneficiaries = await this.prisma.beneficiary.findMany({
-        where: {
-          disbursementStatus: status,
-          disbursementAmount: {
-            gt: minAmount,
-          },
-        },
-      });
-
-      if (!beneficiaries || beneficiaries.length === 0) {
-        throw new BadRequestException(
-          `No beneficiaries found with status ${status} and amount greater than ${minAmount}`,
-        );
-      }
-
-      return beneficiaries;
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        `Failed to fetch disbursement data: ${error.message}`,
-      );
-    }
-  }
-
 
   async createGroupDisbursement(payload: CreateGroupDisbursementDto) {
     try {
-      const { groupId, amount,totalBen,totalAmount } = payload;
+      const { groupId, amount,totalBen,totalAmount,name,type } = payload;
 
       const disbursement = await this.prisma.$transaction(async (tx) => {
         const members = await tx.beneficiaryGroupMember.findMany({
@@ -161,7 +138,9 @@ export class DisbursementService {
           beneficiaryIds,
           amount,
           totalBen,
-          totalAmount
+          totalAmount,
+          name,
+          type
         );
 
         await tx.beneficiary.updateMany({
@@ -192,6 +171,26 @@ export class DisbursementService {
       throw new InternalServerErrorException(
         `Failed to create disbursement ${err}`,
       );
+    }
+  }
+
+  async listDisbursement(){
+    try{
+      return this.prisma.disbursement.findMany({
+        select:{
+          name:true,
+          type:true,
+          uuid:true,
+          amountPerBen:true,
+          totalAmount:true,
+          totalBen:true,
+          createdAt:true,
+          updatedAt:true
+        }
+      })
+    }
+    catch(err){
+      throw new Error(`Failed to list the disbursement,${err.message}`)
     }
   }
 
@@ -227,6 +226,35 @@ export class DisbursementService {
     catch(err){
       console.log(err);
       throw new InternalServerErrorException(`failed to load the disbursement for ${uuid}: ${err.message}`)
+    }
+  }
+
+   async getDisbursementData(status: DisbursementStatus, minAmount: number = 0) {
+    try {
+      const beneficiaries = await this.prisma.beneficiary.findMany({
+        where: {
+          disbursementStatus: status,
+          disbursementAmount: {
+            gt: minAmount,
+          },
+        },
+      });
+
+      if (!beneficiaries || beneficiaries.length === 0) {
+        throw new BadRequestException(
+          `No beneficiaries found with status ${status} and amount greater than ${minAmount}`,
+        );
+      }
+
+      return beneficiaries;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        `Failed to fetch disbursement data: ${error.message}`,
+      );
     }
   }
   async executeDisbursement(disbursementUuid: string) {
