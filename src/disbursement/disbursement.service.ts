@@ -599,13 +599,6 @@ export class DisbursementService {
     try {
       const projectId = process.env.PROJECT_ID;
       const core = process.env.CORE_URL;
-      const registry = await this.prisma.registry.findUnique({
-        where: { id: 'main' },
-      });
-
-      if (!registry) {
-        throw new BadRequestException('Registry configuration not found');
-      }
 
       const contractSettings = await this.prisma.settings.findUnique({
         where: {
