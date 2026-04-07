@@ -320,7 +320,7 @@ export class DisbursementService {
         () => disbursementData.amountPerBen,
       );
 
-      const response = await this.forwardToRegistry(
+      const response = await this.forwardToCore(
         benAddress,
         amount,
         disbursementData.totalAmount,
@@ -368,13 +368,13 @@ export class DisbursementService {
     try {
       // const projectId = process.env.PROJECT_ID;
       // const core = process.env.CORE_URL;
-      // // Query registry details from database
-      // const registry = await this.prisma.registry.findUnique({
+      // // Query core details from database
+      // const core = await this.prisma.core.findUnique({
       //   where: { id: 'main' },
       // });
 
-      // if (!registry) {
-      //   throw new BadRequestException('Registry configuration not found');
+      // if (!core) {
+      //   throw new BadRequestException('core configuration not found');
       // }
 
       // const contractSettings = await this.prisma.settings.findUnique({
@@ -421,7 +421,7 @@ export class DisbursementService {
       const benAddress = disbursementData.map((d) => d.walletAddress);
       const amount = disbursementData.map((d) => d.disbursementAmount || 0);
       const totalAmount = amount.reduce((acc, curr) => acc + curr, 0);
-      await this.forwardToRegistry(benAddress, amount, totalAmount);
+      await this.forwardToCore(benAddress, amount, totalAmount);
 
       // Validate required fields
       // if (!payload.tokenAddress || !details. || !payload.amount || !payload?.projectId) {
@@ -442,7 +442,7 @@ export class DisbursementService {
         });
       }
       throw new InternalServerErrorException(
-        `Failed to forward request to registry: ${error.message}`,
+        `Failed to forward request to core: ${error.message}`,
       );
     }
   }
@@ -466,7 +466,7 @@ export class DisbursementService {
     const amount = [Number(data?.disbursementAmount)];
     const totalAmount = Number(amount);
 
-    await this.forwardToRegistry(benAddress, amount, totalAmount);
+    await this.forwardToCore(benAddress, amount, totalAmount);
   }
 
   async disburseToGroup(groupId: number) {
@@ -509,7 +509,7 @@ export class DisbursementService {
       const amount = benData.map((d) => d.disbursementAmount || 0);
       const totalAmount = amount.reduce((acc, curr) => acc + curr, 0);
 
-      await this.forwardToRegistry(benAddress, amount, totalAmount);
+      await this.forwardToCore(benAddress, amount, totalAmount);
     } catch (err) {
       if (err.response?.status === 400 || err.response?.status === 404) {
         throw err;
@@ -569,7 +569,7 @@ export class DisbursementService {
       const benAddress = benData.map((d) => d.walletAddress);
       const amount = benData.map((d) => d.disbursementAmount || 0);
       const totalAmount = amount.reduce((acc, curr) => acc + curr, 0);
-      await this.forwardToRegistry(benAddress, amount, totalAmount);
+      await this.forwardToCore(benAddress, amount, totalAmount);
     } catch (err) {
       if (err.response?.status === 400 || err.response?.status === 404) {
         throw err;
@@ -591,7 +591,7 @@ export class DisbursementService {
     }
   }
 
-  async forwardToRegistry(
+  async forwardToCore(
     benAddress: string[],
     amount: number[],
     totalAmount: number,
@@ -627,7 +627,7 @@ export class DisbursementService {
         serviceTags: [ACTIONS.DISBURSEMENT.name],
       };
 
-      // Post request to registry baseUrl
+      // Post request to core baseUrl
 
       const response = await axios.post(
         `${core}/request`,
@@ -641,7 +641,7 @@ export class DisbursementService {
 
       return {
         status: 'success',
-        message: 'Disbursement request forwarded to registry',
+        message: 'Disbursement request forwarded to core',
         data: response.data,
       };
     } catch (err) {
