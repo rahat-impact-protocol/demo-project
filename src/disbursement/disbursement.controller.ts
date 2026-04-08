@@ -1,6 +1,9 @@
-import { Controller, Post, Get, Body, Query } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, Param } from '@nestjs/common';
 import { DisbursementService } from './disbursement.service';
-import { CreateDisbursementDto } from './dto/disburse.dto';
+import {
+  CreateDisbursementDto,
+  CreateGroupDisbursementDto,
+} from './dto/disburse.dto';
 import { DisbursementStatus } from '@prisma/client';
 
 @Controller('disbursement')
@@ -12,20 +15,41 @@ export class DisbursementController {
     return this.disbursementService.createDisbursement(payload);
   }
 
-  @Post('disburse')
-  async disburse() {
-    return this.disbursementService.forwardToRegistry();
+  @Post('/group')
+  async createGroupDisbursement(@Body() payload: CreateGroupDisbursementDto) {
+    return this.disbursementService.createGroupDisbursement(payload);
   }
 
-  @Get('data')
+  @Post('disburse/:uuid')
+  async disburse(@Param('uuid')disbursementId:string) {
+    console.log(disbursementId)
+    return this.disbursementService.executeDisbursement(disbursementId);
+  }
+
+  @Get('/:id')
+  async getDisbursementDetails(@Param('id')uuid:string){
+    return this.disbursementService.getDisbursementDetails(uuid)
+  }
+
+  // @Post('disburse/ben/:id')
+  // async disburseToBen(@Param('id') id: string) {
+  //   return this.disbursementService.disburseToBen(id);
+  // }
+
+  // @Post('disburse/group/:groupId')
+  // async disburseToGroup(@Param('groupId') groupId: number) {
+  //   return this.disbursementService.disburseToGroup(+groupId);
+  // }
+
+  // @Post('disburse/beneficiaries')
+  // async disburseToBeneficiaries(@Body() benId: string[]) {
+  //   return this.disbursementService.disburseToMultiBen(benId);
+  // }
+
+  @Get()
   async getDisbursementData(
-    @Query('status') status: DisbursementStatus,
-    @Query('minAmount') minAmount: string = '0',
+   
   ) {
-    return this.disbursementService.getDisbursementData(
-      status,
-      parseInt(minAmount, 10),
-    );
+    return this.disbursementService.listDisbursement();
   }
 }
-
