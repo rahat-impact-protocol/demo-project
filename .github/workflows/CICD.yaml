@@ -1,10 +1,6 @@
 name: CICD Pipeline
 
 on:
-  push:
-    branches:
-      - main
-      - stage
   workflow_dispatch:
 
 env:
