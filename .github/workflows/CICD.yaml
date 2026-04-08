@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: ${{ env.DOCKERHUB_USERNAME }}/demo-project
+  IMAGE_NAME: esatya/rahat-impact-demo-project
 
 jobs:
   build-and-push:
