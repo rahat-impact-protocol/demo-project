@@ -41,7 +41,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile   
+          file: ./Dockerfile.project 
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:dev
