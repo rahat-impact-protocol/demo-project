@@ -11,7 +11,7 @@ import {
   CreateGroupDisbursementDto,
 } from './dto/disburse.dto';
 import { DisbursementStatus, DisbursementType } from '@prisma/client';
-import { ACTIONS } from '@rahat/token-disbursement-actions';
+// import { ACTIONS } from '@rahat/token-disbursement-actions';
 
 @Injectable()
 export class DisbursementService {
@@ -624,7 +624,8 @@ export class DisbursementService {
             projectAddress: fundStorageContract,
           },
         },
-        serviceTags: [ACTIONS.DISBURSEMENT.name],
+        serviceTags:['disbursement']
+        // [ACTIONS.DISBURSEMENT.name],
       };
 
       // Post request to core baseUrl

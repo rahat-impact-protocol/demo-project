@@ -8,6 +8,30 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const _logger = new Logger(NestApplication.name);
 
+  app.enableCors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or Postman)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      // Allow any localhost origin during development
+      const isLocalhostOrigin =
+        /^https?:\/\/localhost(?::\d+)?$/.test(origin) ||
+        /^https?:\/\/127\.0\.0\.1(?::\d+)?$/.test(origin);
+
+      if (isLocalhostOrigin) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Token Disbursement Service')
