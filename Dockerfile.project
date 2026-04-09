@@ -1,0 +1,28 @@
+FROM node:22-alpine AS builder
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml* ./
+
+RUN npm i -g pnpm@9.15.2 && pnpm install
+
+COPY . .
+
+RUN pnpm build
+
+RUN pnpm prisma:generate
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+    && chown -R appuser:appgroup /app
+
+# Copy only the necessary artifacts from builder
+COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
+COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
+COPY --from=builder --chown=appuser:appgroup /app/package.json ./
+
+USER appuser
+
+EXPOSE 3000
+CMD ["node", "dist/src/main.js"]

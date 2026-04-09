@@ -1,22 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import { Wallet } from 'ethers';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Seed Registry
-  await prisma.registry.upsert({
-    where: { id: 'main' },
-    update: {},
-    create: {
-      id: 'main',
-      baseUrl: 'https://example.com',
-      //update the public key
-      publicKey: '0xf0c84735Af5669c809EfD62C9D4e466d331A95b0',
-      //need to update the private key
-      privateKey: '404b135088bc4046f8ae06c939e3aa2c3er0fdc0d8c9109926fa5cb7184ec08f',
-    },
-  });
-
   // Seed Blockchain Settings
   await prisma.settings.upsert({
     where: { name: 'blockchain' },
@@ -35,6 +22,23 @@ async function main() {
       isPrivate: false,
     },
   });
+
+  const walletDetails: any = await walletGeneration();
+  await prisma.settings.create({
+    data: {
+      name: 'accoount',
+      value: walletDetails,
+      dataType: 'OBJECT',
+      requiredFields: ['privateKey'],
+      isPrivate: true,
+      isReadOnly: true,
+    },
+  });
+}
+
+async function walletGeneration() {
+  const wallet = await Wallet.createRandom();
+  return wallet;
 }
 
 main()

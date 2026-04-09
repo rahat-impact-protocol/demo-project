@@ -1,0 +1,7 @@
+# .dockerignore
+node_modules
+.git
+.env*
+
+# Override gitignore - include dist
+!dist

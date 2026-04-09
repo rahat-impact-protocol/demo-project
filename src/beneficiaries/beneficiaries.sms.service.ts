@@ -26,7 +26,7 @@ export class BeneficiarySmsService {
       if (!phone) {
         throw new BadRequestException(`No phone number found`);
       }
-      this.forwardToRegistry(phone || '', message, 'sendsms');
+      this.forwardToCore(phone || '', message, 'sendsms');
     } catch (err) {
       throw err;
     }
@@ -53,13 +53,13 @@ export class BeneficiarySmsService {
       if (phone.length >= 0) {
         throw new BadRequestException(`No phone number found`);
       }
-      this.forwardToRegistry(phone || [], message, 'sendsms');
+      this.forwardToCore(phone || [], message, 'sendsms');
     } catch (err) {
       throw err;
     }
   }
 
-  async forwardToRegistry(
+  async forwardToCore(
     phone: string | string[],
     message: any,
     actionPerformed: string,
@@ -67,13 +67,7 @@ export class BeneficiarySmsService {
     try {
       const projectId = process.env.PROJECT_ID;
       const core = process.env.CORE_URL;
-      const registry = await this.prisma.registry.findUnique({
-        where: { id: 'main' },
-      });
-
-      if (!registry) {
-        throw new BadRequestException('Registry configuration not found');
-      }
+     
       const smsRequest = {
         projectId: projectId || '',
         requestData: {
