@@ -47,9 +47,7 @@ export class DisbursementController {
   // }
 
   @Get()
-  async getDisbursementData(
-   
-  ) {
+  async getDisbursementData() {
     return this.disbursementService.listDisbursement();
   }
 }
