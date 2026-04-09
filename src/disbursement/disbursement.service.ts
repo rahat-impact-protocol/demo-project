@@ -608,10 +608,10 @@ export class DisbursementService {
 
 
       const settings: any = contractSettings?.value;
-      const fundStorageContract = settings?.fundStorageContract?.address;
+      const fundStorageContract = settings?.fundStorageContract?.address || '0xe7f1725e7734ce288f8367e1bb143e90bb3f0512';
       console.log(fundStorageContract);
       const tokenAddress =
-        settings?.token?.address || '0x92a437290E6AE7477955624859C6D15CDb324eD4';
+        settings?.token?.address || '0x5fbdb2315678afecb367f032d93f642f64180aa3';
 
       const disbursementRequest: DisbursementRequestDto = {
         projectId: projectId || '',
