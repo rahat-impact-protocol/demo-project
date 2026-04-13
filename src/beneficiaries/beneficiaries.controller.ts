@@ -23,7 +23,11 @@ import {
 import { BeneficiaryGroupService } from './beneficiaries.group.service';
 import { CsvFileValidator } from './filevalidator';
 import { BeneficiarySmsService } from './beneficiaries.sms.service';
-import { SendBulkSms, SendSms } from './dto/beneficiary.sms.dto';
+import {
+  SendBulkSms,
+  SendSms,
+  SmsHistoryQueryDto,
+} from './dto/beneficiary.sms.dto';
 
 @Controller('beneficiaries')
 export class BeneficiaryController {
@@ -119,5 +123,13 @@ export class BeneficiaryController {
   @Post('/bulksms')
   async sendBulkSms(@Body() data: SendBulkSms) {
     return this.beneficiarySmsService.sendBulkSms(data);
+  }
+
+  @Get('/sms/:benId/history')
+  async getSmsHistory(
+    @Param('benId') benId: string,
+    @Query() query: SmsHistoryQueryDto,
+  ) {
+    return this.beneficiarySmsService.getSmsHistory(benId, query);
   }
 }

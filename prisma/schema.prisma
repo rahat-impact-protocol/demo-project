@@ -46,7 +46,7 @@ model Beneficiary {
   pii                BeneficiaryPii?         @relation("BeneficiaryToPii")
   group              BeneficiaryGroupMember? @relation("BeneficiaryGroupMember")
   disbursement       BenDisbursement[]       @relation("BeneficiaryDisbursements")
-
+  communication      Communication[]  @relation("BeneficiaryCommunication")
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
@@ -135,12 +135,45 @@ model BeneficiaryGroupMember {
   @@map("tbl_beneficiary_group_member")
 }
 
+model Communication {
+  id          Int       @id @default(autoincrement())
+  uuid        String    @unique @default(uuid())
+  benId       Int
+  phone       String
+  message     String
+  status      CommunicationStatus @default(CREATED)
+  type        CommunicationType   @default(SMS)
+  providerRef String?
+  sentAt      DateTime?
+  failedAt    DateTime?
+  errorNote   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+
+  beneficiary Beneficiary @relation("BeneficiaryCommunication", fields: [benId], references: [id])
+
+  @@map("tbl_communication")
+
+}
+
 enum SettingDataType {
   STRING
   NUMBER
   BOOLEAN
   OBJECT
 }
+
+enum CommunicationStatus {
+  SENDING
+  CREATED
+  FAILED
+  DELIVERED
+}
+enum CommunicationType {
+  SMS
+  IVR
+}
+
 
 enum DisbursementStatus {
   CREATED
