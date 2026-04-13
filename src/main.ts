@@ -61,8 +61,8 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('Token Disbursement Service')
-      .setDescription('API service for Token Disbursement')
+      .setTitle('CVA Project')
+      .setDescription('API service for CVA Project')
       .setVersion('1.0')
       // .addBearerAuth(
       //   { type: 'http', scheme: 'bearer', bearerFormat: APP.JWT_BEARER },
