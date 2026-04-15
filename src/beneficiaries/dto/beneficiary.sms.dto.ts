@@ -8,23 +8,25 @@ import {
   ArrayNotEmpty,
 } from 'class-validator';
 export class SendSms{
-    @ApiProperty({example:'09876-4567-0987-4567', required:true})
-    @IsString()
-    benId:string
+  @ApiPropertyOptional({example:'09876-4567-0987-4567', description:'Communication UUID'})
+  @IsOptional()
+  @IsUUID()
+  communicationId?: string
 
-    @ApiProperty({example:'Hi the alert message', required:true})
-    @IsString()
-    message:string
+  @ApiPropertyOptional({example:'09876-4567-0987-4567', description:'Alias of communication UUID'})
+  @IsOptional()
+  @IsUUID()
+  smsId?: string
 }
 
 export class SendBulkSms{
     @ApiProperty({example:'09876-4567-0987-4567', required:true})
     @IsArray()
-    benIds:string[]
+  benIds!:string[]
 
     @ApiProperty({example:'Hi the alert message', required:true})
     @IsString()
-    message:string
+  message!:string
 }
 export class SmsHistoryQueryDto {
   @ApiPropertyOptional({ example: 1, description: 'Page number (1-based)', default: 1 })

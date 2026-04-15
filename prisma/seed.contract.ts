@@ -7,13 +7,17 @@ async function main() {
 		where: { name: 'contract' },
 		update: {
 			value: {
+				token: {
+					// abi: '',
+					address: '0x9b5a4e041ab18a84f154167569806a55bf53439c',
+				},
 				fundStorageContract: {
 					// abi: '',
-					address: '',
+					address: '0xca602d481dbdcd046200c0b4b394b6d2ca5ff79c',
 				},
 			},
 			dataType: 'OBJECT',
-			requiredFields: ['tokenDisbursement'],
+			requiredFields: ['fundStorageContract'],
 			isReadOnly: false,
 			isPrivate: false,
 		},
@@ -22,11 +26,15 @@ async function main() {
 			value: {
 				token: {
 					// abi: '',
-					address: '',
+					address: '0x9b5a4e041ab18a84f154167569806a55bf53439c',
+				},
+				fundStorageContract: {
+					// abi: '',
+					address: '0xca602d481dbdcd046200c0b4b394b6d2ca5ff79c',
 				},
 			},
 			dataType: 'OBJECT',
-			requiredFields: ['tokenDisbursement'],
+			requiredFields: ['token'],
 			isReadOnly: false,
 			isPrivate: false,
 		},

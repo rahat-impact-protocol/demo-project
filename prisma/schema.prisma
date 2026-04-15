@@ -37,18 +37,18 @@ model Settings {
 }
 
 model Beneficiary {
-  id                 Int                     @id @default(autoincrement()) @db.Integer()
-  uuid               String                  @unique @default(uuid())
+  id                 Int                        @id @default(autoincrement()) @db.Integer()
+  uuid               String                     @unique @default(uuid())
   walletAddress      String
   requestId          String?
   disbursementAmount Int?
-  disbursementStatus DisbursementStatus      @default(NOTSTARTED)
-  pii                BeneficiaryPii?         @relation("BeneficiaryToPii")
-  group              BeneficiaryGroupMember? @relation("BeneficiaryGroupMember")
-  disbursement       BenDisbursement[]       @relation("BeneficiaryDisbursements")
-  communication      Communication[]  @relation("BeneficiaryCommunication")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
+  disbursementStatus DisbursementStatus         @default(NOTSTARTED)
+  pii                BeneficiaryPii?            @relation("BeneficiaryToPii")
+  group              BeneficiaryGroupMember?    @relation("BeneficiaryGroupMember")
+  disbursement       BenDisbursement[]          @relation("BeneficiaryDisbursements")
+  communication      BeneficiaryCommunication[] @relation("BeneficiaryCommunication")
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime?                  @updatedAt
 
   @@map("tbl_beneficiary")
 }
@@ -136,10 +136,8 @@ model BeneficiaryGroupMember {
 }
 
 model Communication {
-  id          Int       @id @default(autoincrement())
-  uuid        String    @unique @default(uuid())
-  benId       Int
-  phone       String
+  id          Int                 @id @default(autoincrement())
+  uuid        String              @unique @default(uuid())
   message     String
   status      CommunicationStatus @default(CREATED)
   type        CommunicationType   @default(SMS)
@@ -147,13 +145,26 @@ model Communication {
   sentAt      DateTime?
   failedAt    DateTime?
   errorNote   String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime? @updatedAt
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime?           @updatedAt
 
-  beneficiary Beneficiary @relation("BeneficiaryCommunication", fields: [benId], references: [id])
+  benCommunication BeneficiaryCommunication[] @relation("Communication")
 
   @@map("tbl_communication")
+}
 
+model BeneficiaryCommunication {
+  id              Int       @id @default(autoincrement()) @db.Integer()
+  uuid            String    @unique @default(uuid())
+  communicationId Int
+  benId           Int
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime? @updatedAt
+
+  beneficiary   Beneficiary   @relation("BeneficiaryCommunication", fields: [benId], references: [id])
+  communication Communication @relation("Communication", fields: [communicationId], references: [id])
+
+  @@map("tbl_ben_communication")
 }
 
 enum SettingDataType {
@@ -169,11 +180,11 @@ enum CommunicationStatus {
   FAILED
   DELIVERED
 }
+
 enum CommunicationType {
   SMS
   IVR
 }
-
 
 enum DisbursementStatus {
   CREATED
@@ -183,6 +194,7 @@ enum DisbursementStatus {
   PENDING
 }
 
-enum DisbursementType{
+enum DisbursementType {
   Cash
 }
+ 

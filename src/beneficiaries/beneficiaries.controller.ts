@@ -116,20 +116,25 @@ export class BeneficiaryController {
   //sms service for beneficiary
 
   @Post('/sms')
-  async sendSms(@Body() data: SendSms) {
-    return this.beneficiarySmsService.sendSms(data);
+  async createSms(@Body() data: any) {
+    return this.beneficiarySmsService.createSms(data);
   }
 
-  @Post('/bulksms')
-  async sendBulkSms(@Body() data: SendBulkSms) {
-    return this.beneficiarySmsService.sendBulkSms(data);
+  @Patch('/send/sms/:id')
+  async sendSms(@Param('id') id: any) {
+    return this.beneficiarySmsService.sendSms(id);
+  } 
+
+  @Get('/sms/:id')
+  async getSmsHistory(@Param('id')id:string){
+    return this.beneficiarySmsService.getSmsHistory(id)
   }
 
   @Get('/sms/:benId/history')
-  async getSmsHistory(
+  async getBenSmsHistory(
     @Param('benId') benId: string,
     @Query() query: SmsHistoryQueryDto,
   ) {
-    return this.beneficiarySmsService.getSmsHistory(benId, query);
+    return this.beneficiarySmsService.getBenSmsHistory(benId, query);
   }
 }

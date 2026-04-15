@@ -11,10 +11,10 @@ async function main() {
     create: {
       name: 'blockchain',
       value: {
-        network: 'mainnet',
-        rpcUrl: 'https://mainnet.infura.io/v3/your-infura-key',
-        chainId: 1,
-        explorer: 'https://etherscan.io',
+        network: 'BaseSepolia',
+        rpcUrl: 'https://base-sepolia.g.alchemy.com/v2/yCToD_5zX3QBjftdawuUm5OTlAD6idH7',
+        chainId: 84532,
+        explorer: 'https://sepolia.basescan.org/',
       },
       dataType: 'OBJECT',
       requiredFields: ['network', 'rpcUrl', 'chainId', 'explorer'],
