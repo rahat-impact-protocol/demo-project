@@ -27,6 +27,7 @@ import {
   SendBulkSms,
   SendSms,
   SmsHistoryQueryDto,
+  ListCommunicationQueryDto,
 } from './dto/beneficiary.sms.dto';
 
 @Controller('beneficiaries')
@@ -120,6 +121,12 @@ export class BeneficiaryController {
     return this.beneficiarySmsService.createSms(data);
   }
 
+
+  @Get('/sms')
+  async listCommunication(@Query() query: ListCommunicationQueryDto) {
+    return this.beneficiarySmsService.listCommunication(query);
+  }
+
   @Patch('/send/sms/:id')
   async sendSms(@Param('id') id: any) {
     return this.beneficiarySmsService.sendSms(id);
@@ -137,4 +144,6 @@ export class BeneficiaryController {
   ) {
     return this.beneficiarySmsService.getBenSmsHistory(benId, query);
   }
+
+
 }
