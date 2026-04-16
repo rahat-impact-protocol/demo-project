@@ -37,3 +37,23 @@ export class SmsHistoryQueryDto {
   @IsOptional()
   limit?: number = 20;
 }
+
+export class ListCommunicationQueryDto {
+  @ApiPropertyOptional({ example: 1, description: 'Page number (1-based)', default: 1 })
+  @IsOptional()
+  page?: number = 1;
+
+  @ApiPropertyOptional({ example: 20, description: 'Items per page', default: 20 })
+  @IsOptional()
+  limit?: number = 20;
+
+  @ApiPropertyOptional({ example: 'SMS', description: 'Filter by communication type (SMS, IVR)' })
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @ApiPropertyOptional({ example: 'DELIVERED', description: 'Filter by communication status (CREATED, SENDING, DELIVERED, FAILED)' })
+  @IsOptional()
+  @IsString()
+  status?: string;
+}

@@ -81,6 +81,100 @@ export class BeneficiarySmsService {
 
   }
 
+
+  async listCommunication(query: any) {
+    const { page = 1, limit = 20, type, status } = query;
+
+    // Build where clause with optional filters
+    const whereClause: any = {};
+
+    if (type) {
+      whereClause.type = type;
+    }
+
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // Calculate pagination offsets
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination
+    const total = await this.prisma.communication.count({
+      where: whereClause,
+    });
+
+    // Fetch communications with their beneficiaries
+    const communications = await this.prisma.communication.findMany({
+      where: whereClause,
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        uuid: true,
+        message: true,
+        status: true,
+        type: true,
+        providerRef: true,
+        sentAt: true,
+        failedAt: true,
+        errorNote: true,
+        createdAt: true,
+        updatedAt: true,
+        benCommunication: {
+          select: {
+            beneficiary: {
+              select: {
+                id: true,
+                uuid: true,
+                pii: {
+                  select: {
+                    phone: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Format the response
+    const data = communications.map((comm) => ({
+      uuid: comm.uuid,
+      message: comm.message,
+      status: comm.status,
+      type: comm.type,
+      providerRef: comm.providerRef,
+      sentAt: comm.sentAt,
+      failedAt: comm.failedAt,
+      errorNote: comm.errorNote,
+      createdAt: comm.createdAt,
+      updatedAt: comm.updatedAt,
+      beneficiaries: comm.benCommunication.map((bc) => ({
+        id: bc.beneficiary.id,
+        uuid: bc.beneficiary.uuid,
+        phone: bc.beneficiary.pii?.phone,
+      })),
+      totalBeneficiaries: comm.benCommunication.length,
+    }));
+
+    // Calculate total pages
+    const pages = Math.ceil(total / limit);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages,
+      },
+    };
+  }
+
   async sendSms(id:string) {
     if (!id) {
       throw new BadRequestException('communicationId or smsId is required');
