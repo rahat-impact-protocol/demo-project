@@ -14,6 +14,7 @@ export class BeneficiarySmsService {
 
   async createSms(data: any) {
     const { benIds, message, groupId, type } = data;
+    console.log(data);
     let beneficiaries;
     try {
       if (groupId) {
@@ -53,7 +54,7 @@ export class BeneficiarySmsService {
           },
         });
       }
-
+      console.log(beneficiaries);
       const communicationLog = await this.prisma.communication.create({
         data: {
           message: message,
@@ -71,7 +72,6 @@ export class BeneficiarySmsService {
       throw err;
     }
   }
-
 
   async listCommunication(query: any) {
     const { page = 1, limit = 20, type, status } = query;
@@ -166,7 +166,7 @@ export class BeneficiarySmsService {
     };
   }
 
-  async sendSms(id:string) {
+  async sendSms(id: string) {
     if (!id) {
       throw new BadRequestException('communicationId or smsId is required');
     }
