@@ -2,87 +2,86 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
-  SendBulkSms,
-  SendSms,
-  SmsHistoryQueryDto,
-} from './dto/beneficiary.sms.dto';
-import { CommunicationStatus } from '@prisma/client';
+  CommunicationHistoryQueryDto,
+  CreateCommunication,
+  ListCommunicationQueryDto,
+} from './dto/communication.dto';
 
 @Injectable()
-export class BeneficiarySmsService {
+export class CommunicationService {
   constructor(private prisma: PrismaService) {}
 
-  async createSms(data:any){
-    const{benIds,message, groupId,type} = data;
-    let beneficiaries;
-    try{
-        if(groupId){
-          beneficiaries = await this.prisma.beneficiaryGroup.findMany({
-            where:{
-              uuid:{in:groupId}
-            },
-            select:{
-              members:{
-                include:{
-                  beneficiary:{
-                    select:{
-                      id:true,
-                      pii:{
-                        select:{
-                          phone:true
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          })
-        } 
-        else {
-          beneficiaries = await this.prisma.beneficiary.findMany({
-            where:{
-              uuid:{in:benIds}
-            },
-            select:{
-              id:true,
-              pii:{
-                select:{
-                  phone:true
-                }
-              }
+  async createSms(data: CreateCommunication) {
+    const { benIds, message, groupId, type } = data;
 
+    const hasGroupIds = groupId && groupId.length > 0;
+    const hasBenIds = benIds && benIds.length > 0;
 
-            }
-          })
-        }
-
-        const communicationLog = await this.prisma.communication.create({
-          data:{
-            message:message,
-            type:type,
-            benCommunication:{
-              create:beneficiaries.map((d)=>({
-                benId:d?.id
-              }))
-              
-            }
-          }
-
-        })
-        return communicationLog;
-
-
+    if (!hasGroupIds && !hasBenIds) {
+      throw new BadRequestException(
+        'Either benIds or groupId must be provided.',
+      );
     }
-    catch(err){
+
+    let beneficiaries;
+    try {
+      if (hasGroupIds) {
+        beneficiaries = await this.prisma.beneficiaryGroup.findMany({
+          where: {
+            uuid: { in: groupId },
+          },
+          select: {
+            members: {
+              include: {
+                beneficiary: {
+                  select: {
+                    id: true,
+                    pii: {
+                      select: {
+                        phone: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+      } else {
+        beneficiaries = await this.prisma.beneficiary.findMany({
+          where: {
+            uuid: { in: benIds },
+          },
+          select: {
+            id: true,
+            pii: {
+              select: {
+                phone: true,
+              },
+            },
+          },
+        });
+      }
+
+      const communicationLog = await this.prisma.communication.create({
+        data: {
+          message: message,
+          type: type,
+          benCommunication: {
+            create: beneficiaries.map((d) => ({
+              benId: d?.id,
+            })),
+          },
+        },
+      });
+      return communicationLog;
+    } catch (err) {
       console.log(err);
       throw err;
     }
-
   }
 
-
-  async listCommunication(query: any) {
+  async listCommunication(query: ListCommunicationQueryDto) {
     const { page = 1, limit = 20, type, status } = query;
 
     // Build where clause with optional filters
@@ -175,33 +174,33 @@ export class BeneficiarySmsService {
     };
   }
 
-  async sendSms(id:string) {
+  async sendSms(id: string) {
     if (!id) {
       throw new BadRequestException('communicationId or smsId is required');
     }
     try {
       const communication = await this.prisma.communication.findUnique({
-        where:{
+        where: {
           uuid: id,
         },
-        select:{
-          uuid:true,
-          message:true,
-          benCommunication:{
-            select:{
-              beneficiary:{
-                select:{
-                  uuid:true,
-                  pii:{
-                    select:{
-                      phone:true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+        select: {
+          uuid: true,
+          message: true,
+          benCommunication: {
+            select: {
+              beneficiary: {
+                select: {
+                  uuid: true,
+                  pii: {
+                    select: {
+                      phone: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!communication) {
@@ -214,9 +213,10 @@ export class BeneficiarySmsService {
       }));
 
       const withPhone = recipients.filter(
-        (recipient): recipient is { benUuid: string; phone: string } => !!recipient.phone,
+        (recipient): recipient is { benUuid: string; phone: string } =>
+          !!recipient.phone,
       );
-     console.log(withPhone)
+      console.log(withPhone);
       if (withPhone.length === 0) {
         throw new BadRequestException(`No phone number found`);
       }
@@ -230,34 +230,32 @@ export class BeneficiarySmsService {
     }
   }
 
-  async getBenSmsHistory(benId: string, query: SmsHistoryQueryDto) {
+  async getBenSmsHistory(benId: string, query: CommunicationHistoryQueryDto) {
     const { page = 1, limit = 20 } = query;
     const skip = (Number(page) - 1) * Number(limit);
 
-   const details = this.prisma.beneficiary.findUnique({
-    where:{
-      uuid:benId
-    },
-    select:{
-      communication:{
-        select:{
-          communication:{
-            select:{
-              message:true,
-              status:true,
-              type:true
-            }
-          }          
-        }
-      }
-    }
-   })
+    const details = this.prisma.beneficiary.findUnique({
+      where: {
+        uuid: benId,
+      },
+      select: {
+        communication: {
+          select: {
+            communication: {
+              select: {
+                message: true,
+                status: true,
+                type: true,
+              },
+            },
+          },
+        },
+      },
+    });
     if (!details) {
       throw new BadRequestException(`Beneficiary not found: ${benId}`);
     }
     return details;
-
-
 
     // const [logs, total] = await this.prisma.$transaction([
     //   this.prisma.communication.findMany({
@@ -291,37 +289,36 @@ export class BeneficiarySmsService {
     // };
   }
 
-  async getSmsHistory(communicationId:string){
-    try{
+  async getSmsHistory(communicationId: string) {
+    try {
       const details = await this.prisma.communication.findUnique({
-        where:{
-          uuid:communicationId
+        where: {
+          uuid: communicationId,
         },
-        select:{
-          message:true,
-          status:true,
-          createdAt:true,
-          sentAt:true,
-          benCommunication:{
-            select:{
-              beneficiary:{
-                select:{
-                  walletAddress:true,
-                  pii:{
-                    select:{
-                      name:true,
-                      phone:true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      })
-      return details
-    }
-    catch(err){
+        select: {
+          message: true,
+          status: true,
+          createdAt: true,
+          sentAt: true,
+          benCommunication: {
+            select: {
+              beneficiary: {
+                select: {
+                  walletAddress: true,
+                  pii: {
+                    select: {
+                      name: true,
+                      phone: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      return details;
+    } catch (err) {
       throw err;
     }
   }

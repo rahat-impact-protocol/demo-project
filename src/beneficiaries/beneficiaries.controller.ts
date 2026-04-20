@@ -22,20 +22,13 @@ import {
 } from './dto/create-beneficiary.dto';
 import { BeneficiaryGroupService } from './beneficiaries.group.service';
 import { CsvFileValidator } from './filevalidator';
-import { BeneficiarySmsService } from './beneficiaries.sms.service';
-import {
-  SendBulkSms,
-  SendSms,
-  SmsHistoryQueryDto,
-  ListCommunicationQueryDto,
-} from './dto/beneficiary.sms.dto';
 
 @Controller('beneficiaries')
 export class BeneficiaryController {
   constructor(
     private readonly beneficiaryService: BeneficiaryService,
     private readonly beneficiaryGroupService: BeneficiaryGroupService,
-    private readonly beneficiarySmsService: BeneficiarySmsService,
+    // private readonly beneficiarySmsService: BeneficiarySmsService,
   ) {}
 
   @Post()
@@ -113,37 +106,4 @@ export class BeneficiaryController {
   async getGroupById(@Param('id') id: number) {
     return this.beneficiaryGroupService.getGroupById(+id);
   }
-
-  //sms service for beneficiary
-
-  @Post('/sms')
-  async createSms(@Body() data: any) {
-    return this.beneficiarySmsService.createSms(data);
-  }
-
-
-  @Get('/sms')
-  async listCommunication(@Query() query: ListCommunicationQueryDto) {
-    return this.beneficiarySmsService.listCommunication(query);
-  }
-
-  @Patch('/send/sms/:id')
-  async sendSms(@Param('id') id: any) {
-    return this.beneficiarySmsService.sendSms(id);
-  } 
-
-  @Get('/sms/:id')
-  async getSmsHistory(@Param('id')id:string){
-    return this.beneficiarySmsService.getSmsHistory(id)
-  }
-
-  @Get('/sms/:benId/history')
-  async getBenSmsHistory(
-    @Param('benId') benId: string,
-    @Query() query: SmsHistoryQueryDto,
-  ) {
-    return this.beneficiarySmsService.getBenSmsHistory(benId, query);
-  }
-
-
 }

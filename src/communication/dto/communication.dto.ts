@@ -36,7 +36,7 @@ export class CreateCommunication {
 
   @ApiProperty({ example: '232-4444-423-654', required: false })
   @IsArray()
-  groupId?: string;
+  groupId?: string[];
 
   @ApiProperty({ example: 'this is test message', required: true })
   @IsString()

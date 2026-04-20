@@ -7,6 +7,7 @@ import { VendorModule } from './vendor/vendor.module';
 import { ResponseModule } from './response/response.module';
 import { BullModule } from '@nestjs/bullmq';
 import { ProcessorModule } from './processor/processor.module';
+import { CommunicationModule } from './communication/communication.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ProcessorModule } from './processor/processor.module';
     VendorModule,
     ResponseModule,
     ProcessorModule,
+    CommunicationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
