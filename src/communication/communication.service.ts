@@ -73,6 +73,13 @@ export class CommunicationService {
             })),
           },
         },
+        select: {
+          uuid: true,
+          message: true,
+          type: true,
+          status: true,
+          createdAt: true,
+        },
       });
       return communicationLog;
     } catch (err) {
@@ -239,10 +246,12 @@ export class CommunicationService {
         uuid: benId,
       },
       select: {
+        uuid: true,
         communication: {
           select: {
             communication: {
               select: {
+                uuid: true,
                 message: true,
                 status: true,
                 type: true,
@@ -256,37 +265,6 @@ export class CommunicationService {
       throw new BadRequestException(`Beneficiary not found: ${benId}`);
     }
     return details;
-
-    // const [logs, total] = await this.prisma.$transaction([
-    //   this.prisma.communication.findMany({
-    //     where: { benId: beneficiary.id },
-    //     orderBy: { createdAt: 'desc' },
-    //     skip,
-    //     take: Number(limit),
-    //     select: {
-    //       uuid: true,
-    //       phone: true,
-    //       message: true,
-    //       status: true,
-    //       providerRef: true,
-    //       sentAt: true,
-    //       failedAt: true,
-    //       errorNote: true,
-    //       createdAt: true,
-    //     },
-    //   }),
-    //   this.prisma.communication.count({ where: { benId: beneficiary.id } }),
-    // ]);
-
-    // return {
-    //   data: logs,
-    //   meta: {
-    //     total,
-    //     page: Number(page),
-    //     limit: Number(limit),
-    //     totalPages: Math.ceil(total / Number(limit)),
-    //   },
-    // };
   }
 
   async getSmsHistory(communicationId: string) {
@@ -296,6 +274,7 @@ export class CommunicationService {
           uuid: communicationId,
         },
         select: {
+          uuid: true,
           message: true,
           status: true,
           createdAt: true,
