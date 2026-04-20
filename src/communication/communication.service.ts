@@ -2,22 +2,30 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import axios from 'axios';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
-  SendBulkSms,
-  SendSms,
-  SmsHistoryQueryDto,
-} from './dto/beneficiary.sms.dto';
-import { CommunicationStatus } from '@prisma/client';
+  CommunicationHistoryQueryDto,
+  CreateCommunication,
+  ListCommunicationQueryDto,
+} from './dto/communication.dto';
 
 @Injectable()
-export class BeneficiarySmsService {
+export class CommunicationService {
   constructor(private prisma: PrismaService) {}
 
-  async createSms(data: any) {
+  async createCommunication(data: CreateCommunication) {
     const { benIds, message, groupId, type } = data;
-    console.log(data);
+
+    const hasGroupIds = groupId && groupId.length > 0;
+    const hasBenIds = benIds && benIds.length > 0;
+
+    if (!hasGroupIds && !hasBenIds) {
+      throw new BadRequestException(
+        'Either benIds or groupId must be provided.',
+      );
+    }
+
     let beneficiaries;
     try {
-      if (groupId) {
+      if (hasGroupIds) {
         beneficiaries = await this.prisma.beneficiaryGroup.findMany({
           where: {
             uuid: { in: groupId },
@@ -54,7 +62,7 @@ export class BeneficiarySmsService {
           },
         });
       }
-      console.log(beneficiaries);
+
       const communicationLog = await this.prisma.communication.create({
         data: {
           message: message,
@@ -65,6 +73,13 @@ export class BeneficiarySmsService {
             })),
           },
         },
+        select: {
+          uuid: true,
+          message: true,
+          type: true,
+          status: true,
+          createdAt: true,
+        },
       });
       return communicationLog;
     } catch (err) {
@@ -73,7 +88,7 @@ export class BeneficiarySmsService {
     }
   }
 
-  async listCommunication(query: any) {
+  async listCommunication(query: ListCommunicationQueryDto) {
     const { page = 1, limit = 20, type, status } = query;
 
     // Build where clause with optional filters
@@ -166,7 +181,7 @@ export class BeneficiarySmsService {
     };
   }
 
-  async sendSms(id: string) {
+  async sendCommunication(id: string) {
     if (!id) {
       throw new BadRequestException('communicationId or smsId is required');
     }
@@ -222,7 +237,10 @@ export class BeneficiarySmsService {
     }
   }
 
-  async getBenSmsHistory(benId: string, query: SmsHistoryQueryDto) {
+  async getBenCommunicationHistory(
+    benId: string,
+    query: CommunicationHistoryQueryDto,
+  ) {
     const { page = 1, limit = 20 } = query;
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -231,10 +249,12 @@ export class BeneficiarySmsService {
         uuid: benId,
       },
       select: {
+        uuid: true,
         communication: {
           select: {
             communication: {
               select: {
+                uuid: true,
                 message: true,
                 status: true,
                 type: true,
@@ -248,46 +268,16 @@ export class BeneficiarySmsService {
       throw new BadRequestException(`Beneficiary not found: ${benId}`);
     }
     return details;
-
-    // const [logs, total] = await this.prisma.$transaction([
-    //   this.prisma.communication.findMany({
-    //     where: { benId: beneficiary.id },
-    //     orderBy: { createdAt: 'desc' },
-    //     skip,
-    //     take: Number(limit),
-    //     select: {
-    //       uuid: true,
-    //       phone: true,
-    //       message: true,
-    //       status: true,
-    //       providerRef: true,
-    //       sentAt: true,
-    //       failedAt: true,
-    //       errorNote: true,
-    //       createdAt: true,
-    //     },
-    //   }),
-    //   this.prisma.communication.count({ where: { benId: beneficiary.id } }),
-    // ]);
-
-    // return {
-    //   data: logs,
-    //   meta: {
-    //     total,
-    //     page: Number(page),
-    //     limit: Number(limit),
-    //     totalPages: Math.ceil(total / Number(limit)),
-    //   },
-    // };
   }
 
-  async getSmsHistory(communicationId: string) {
+  async getCommunicationHistory(communicationId: string) {
     try {
       const details = await this.prisma.communication.findUnique({
         where: {
           uuid: communicationId,
         },
         select: {
+          uuid: true,
           message: true,
           status: true,
           createdAt: true,

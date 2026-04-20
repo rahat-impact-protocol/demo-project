@@ -5,7 +5,6 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { WalletService } from 'src/beneficiaries/wallet';
 import { BeneficiaryGroupService } from './beneficiaries.group.service';
 import { CsvFileValidator } from './filevalidator';
-import { BeneficiarySmsService } from './beneficiaries.sms.service';
 
 @Module({
   imports: [PrismaModule],
@@ -15,7 +14,6 @@ import { BeneficiarySmsService } from './beneficiaries.sms.service';
     WalletService,
     BeneficiaryGroupService,
     CsvFileValidator,
-    BeneficiarySmsService,
   ],
 })
 export class BeneficiariesModule {}
