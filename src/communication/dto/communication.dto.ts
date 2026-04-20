@@ -34,7 +34,7 @@ export class CreateCommunication {
   @IsArray()
   benIds?: string[];
 
-  @ApiProperty({ example: '232-4444-423-654', required: false })
+  @ApiProperty({ example: '[232-4444-423-654]', required: false })
   @IsArray()
   groupId?: string[];
 

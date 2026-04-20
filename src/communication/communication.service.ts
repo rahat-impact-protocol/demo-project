@@ -11,7 +11,7 @@ import {
 export class CommunicationService {
   constructor(private prisma: PrismaService) {}
 
-  async createSms(data: CreateCommunication) {
+  async createCommunication(data: CreateCommunication) {
     const { benIds, message, groupId, type } = data;
 
     const hasGroupIds = groupId && groupId.length > 0;
@@ -181,7 +181,7 @@ export class CommunicationService {
     };
   }
 
-  async sendSms(id: string) {
+  async sendCommunication(id: string) {
     if (!id) {
       throw new BadRequestException('communicationId or smsId is required');
     }
@@ -237,7 +237,10 @@ export class CommunicationService {
     }
   }
 
-  async getBenSmsHistory(benId: string, query: CommunicationHistoryQueryDto) {
+  async getBenCommunicationHistory(
+    benId: string,
+    query: CommunicationHistoryQueryDto,
+  ) {
     const { page = 1, limit = 20 } = query;
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -267,7 +270,7 @@ export class CommunicationService {
     return details;
   }
 
-  async getSmsHistory(communicationId: string) {
+  async getCommunicationHistory(communicationId: string) {
     try {
       const details = await this.prisma.communication.findUnique({
         where: {

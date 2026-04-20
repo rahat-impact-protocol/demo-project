@@ -19,8 +19,8 @@ export class CommunicationController {
   constructor(private readonly communicationService: CommunicationService) {}
 
   @Post('')
-  async createSms(@Body() data: CreateCommunication) {
-    return this.communicationService.createSms(data);
+  async createCommunication(@Body() data: CreateCommunication) {
+    return this.communicationService.createCommunication(data);
   }
 
   @Get('')
@@ -29,20 +29,20 @@ export class CommunicationController {
   }
 
   @Patch('send/:id')
-  async sendSms(@Param('id') id: string) {
-    return this.communicationService.sendSms(id);
+  async sendCommunication(@Param('id') id: string) {
+    return this.communicationService.sendCommunication(id);
   }
 
   @Get(':id')
-  async getSmsHistory(@Param('id') id: string) {
-    return this.communicationService.getSmsHistory(id);
+  async getCommunicationHistory(@Param('id') id: string) {
+    return this.communicationService.getCommunicationHistory(id);
   }
 
   @Get(':benId/history')
-  async getBenSmsHistory(
+  async getBenCommunicationHistory(
     @Param('benId') benId: string,
     @Query() query: CommunicationHistoryQueryDto,
   ) {
-    return this.communicationService.getBenSmsHistory(benId, query);
+    return this.communicationService.getBenCommunicationHistory(benId, query);
   }
 }
