@@ -26,7 +26,7 @@ export class CommunicationService {
     let beneficiaries;
     try {
       if (hasGroupIds) {
-        beneficiaries = await this.prisma.beneficiaryGroup.findMany({
+        const benData = await this.prisma.beneficiaryGroup.findMany({
           where: {
             uuid: { in: groupId },
           },
@@ -47,6 +47,9 @@ export class CommunicationService {
             },
           },
         });
+        beneficiaries = benData.flatMap((d) =>
+          d.members.map((ben) => ben.beneficiary),
+        );
       } else {
         beneficiaries = await this.prisma.beneficiary.findMany({
           where: {
