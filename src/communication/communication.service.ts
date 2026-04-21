@@ -13,7 +13,8 @@ export class CommunicationService {
 
   async createCommunication(data: CreateCommunication) {
     const { benIds, message, groupId, type } = data;
-
+    console.log(data);
+    console.log(benIds, message, groupId, type);
     const hasGroupIds = groupId && groupId.length > 0;
     const hasBenIds = benIds && benIds.length > 0;
 
