@@ -6,6 +6,7 @@ import {
   CreateCommunication,
   ListCommunicationQueryDto,
 } from './dto/communication.dto';
+import { BeneficiaryType } from '@prisma/client';
 
 @Injectable()
 export class CommunicationService {
@@ -23,6 +24,10 @@ export class CommunicationService {
         'Either benIds or groupId must be provided.',
       );
     }
+
+    const benType: BeneficiaryType = hasGroupIds
+      ? BeneficiaryType.GROUP
+      : BeneficiaryType.INDIVIDUAL;
 
     let beneficiaries;
     try {
@@ -71,6 +76,7 @@ export class CommunicationService {
         data: {
           message: message,
           type: type,
+          benType: benType,
           benCommunication: {
             create: beneficiaries.map((d) => ({
               benId: d?.id,
@@ -127,6 +133,7 @@ export class CommunicationService {
         message: true,
         status: true,
         type: true,
+        benType: true,
         providerRef: true,
         sentAt: true,
         failedAt: true,
@@ -163,6 +170,7 @@ export class CommunicationService {
       errorNote: comm.errorNote,
       createdAt: comm.createdAt,
       updatedAt: comm.updatedAt,
+      benType: comm.benType,
       beneficiaries: comm.benCommunication.map((bc) => ({
         id: bc.beneficiary.id,
         uuid: bc.beneficiary.uuid,
@@ -284,6 +292,7 @@ export class CommunicationService {
           uuid: true,
           message: true,
           status: true,
+          benType: true,
           createdAt: true,
           sentAt: true,
           benCommunication: {
