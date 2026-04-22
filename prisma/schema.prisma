@@ -141,6 +141,7 @@ model Communication {
   message     String
   status      CommunicationStatus @default(CREATED)
   type        CommunicationType   @default(SMS)
+  benType     BeneficiaryType     @default(INDIVIDUAL)
   providerRef String?
   sentAt      DateTime?
   failedAt    DateTime?
@@ -165,6 +166,11 @@ model BeneficiaryCommunication {
   communication Communication @relation("Communication", fields: [communicationId], references: [id])
 
   @@map("tbl_ben_communication")
+}
+
+enum BeneficiaryType {
+  INDIVIDUAL
+  GROUP
 }
 
 enum SettingDataType {
@@ -197,4 +203,3 @@ enum DisbursementStatus {
 enum DisbursementType {
   Cash
 }
- 
