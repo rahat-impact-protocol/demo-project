@@ -33,6 +33,11 @@ export class CommunicationController {
     return this.communicationService.sendCommunication(id);
   }
 
+  @Patch(':id')
+  async updateSms(@Param('id') id: string, @Body() data: CreateCommunication) {
+    return this.communicationService.updateSms(id, data);
+  }
+
   @Get(':id')
   async getCommunicationHistory(@Param('id') id: string) {
     return this.communicationService.getCommunicationHistory(id);

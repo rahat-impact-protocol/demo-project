@@ -249,6 +249,37 @@ export class CommunicationService {
     }
   }
 
+  async updateSms(id: string, data: CreateCommunication) {
+    if (!id || !data) {
+      throw new BadRequestException(
+        'communicationId or update data is required',
+      );
+    }
+    console.log(id, data);
+    try {
+      const updateData: any = {};
+      const message = (data as any).details?.message ?? data.message;
+      if (message !== undefined) updateData.message = message;
+
+      const updated = await this.prisma.communication.update({
+        where: { uuid: id },
+        data: updateData,
+        select: {
+          // uuid: true,
+          message: true,
+          // benType: true,
+          // createdAt: true,
+          updatedAt: true,
+        },
+      });
+      const upp = updated;
+      console.log(upp, 'this is upp');
+      return upp;
+    } catch (err) {
+      throw err;
+    }
+  }
+
   async getBenCommunicationHistory(
     benId: string,
     query: CommunicationHistoryQueryDto,
