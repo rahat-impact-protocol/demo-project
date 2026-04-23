@@ -21,11 +21,10 @@ export class DisbursementService {
     prisma: any,
     beneficiaryIds: number[],
     amountPerBen: number,
-    totalben?:number,
-    totalamount?:number,
-    name?:string,
-    type?:DisbursementType
-
+    totalben?: number,
+    totalamount?: number,
+    name?: string,
+    type?: DisbursementType,
   ) {
     const totalBen = totalben || beneficiaryIds.length;
     const totalAmount = totalamount || amountPerBen * totalBen;
@@ -51,7 +50,7 @@ export class DisbursementService {
 
   async createDisbursement(payload: CreateDisbursementDto) {
     try {
-      const { benAddress, amount,totalAmount,totalBen,name,type } = payload;
+      const { benAddress, amount, totalAmount, totalBen, name, type } = payload;
 
       const disbursement = await this.prisma.$transaction(async (tx) => {
         const beneficiaries = await tx.beneficiary.findMany({
@@ -82,7 +81,7 @@ export class DisbursementService {
           totalBen,
           totalAmount,
           name,
-          type
+          type,
         );
 
         await tx.beneficiary.updateMany({
@@ -116,10 +115,9 @@ export class DisbursementService {
     }
   }
 
-
   async createGroupDisbursement(payload: CreateGroupDisbursementDto) {
     try {
-      const { groupId, amount,totalBen,totalAmount,name,type } = payload;
+      const { groupId, amount, totalBen, totalAmount, name, type } = payload;
 
       const disbursement = await this.prisma.$transaction(async (tx) => {
         const members = await tx.beneficiaryGroupMember.findMany({
@@ -146,7 +144,7 @@ export class DisbursementService {
           totalBen,
           totalAmount,
           name,
-          type
+          type,
         );
 
         await tx.beneficiary.updateMany({
@@ -180,62 +178,61 @@ export class DisbursementService {
     }
   }
 
-  async listDisbursement(){
-    try{
+  async listDisbursement() {
+    try {
       return this.prisma.disbursement.findMany({
-        select:{
-          name:true,
-          type:true,
-          uuid:true,
-          amountPerBen:true,
-          totalAmount:true,
-          totalBen:true,
-          createdAt:true,
-          updatedAt:true
-        }
-      })
-    }
-    catch(err){
-      throw new Error(`Failed to list the disbursement,${err.message}`)
+        select: {
+          name: true,
+          type: true,
+          uuid: true,
+          amountPerBen: true,
+          totalAmount: true,
+          totalBen: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    } catch (err) {
+      throw new Error(`Failed to list the disbursement,${err.message}`);
     }
   }
 
-  async getDisbursementDetails(uuid:string){
-    try{
-      const data = await this.prisma.disbursement.findUnique({where:{
-        uuid
-      },
-      select:{
-        uuid:true,
-        amountPerBen:true,
-        totalAmount:true,
-        totalBen:true,
-        createdAt:true,
-        updatedAt:true,
-        benDisbursement:{
-          select:{
-            beneficiary:{
-              select:{
-                walletAddress:true,
-                disbursementStatus:true
-                
-              }
-            }
+  async getDisbursementDetails(uuid: string) {
+    try {
+      const data = await this.prisma.disbursement.findUnique({
+        where: {
+          uuid,
+        },
+        select: {
+          uuid: true,
+          amountPerBen: true,
+          totalAmount: true,
+          totalBen: true,
+          createdAt: true,
+          updatedAt: true,
+          benDisbursement: {
+            select: {
+              beneficiary: {
+                select: {
+                  walletAddress: true,
+                  disbursementStatus: true,
+                },
+              },
+            },
           },
-          
-        }
-      }
-    })
-   
-    return data;
-    }
-    catch(err){
+        },
+      });
+
+      return data;
+    } catch (err) {
       console.log(err);
-      throw new InternalServerErrorException(`failed to load the disbursement for ${uuid}: ${err.message}`)
+      throw new InternalServerErrorException(
+        `failed to load the disbursement for ${uuid}: ${err.message}`,
+      );
     }
   }
 
-   async getDisbursementData(status: DisbursementStatus, minAmount: number = 0) {
+  async getDisbursementData(status: DisbursementStatus, minAmount: number = 0) {
     try {
       const beneficiaries = await this.prisma.beneficiary.findMany({
         where: {
@@ -623,11 +620,13 @@ export class DisbursementService {
       });
 
       const settings: any = contractSettings?.value;
-      const fundStorageContract = settings?.fundStorageContract?.address;
+      const fundStorageContract =
+        settings?.fundStorageContract?.address ||
+        '0xe7f1725e7734ce288f8367e1bb143e90bb3f0512';
       console.log(fundStorageContract);
       const tokenAddress =
         settings?.token?.address ||
-        '0x92a437290E6AE7477955624859C6D15CDb324eD4';
+        '0x5fbdb2315678afecb367f032d93f642f64180aa3';
 
       const disbursementRequest: DisbursementRequestDto = {
         projectId: projectId || '',
@@ -640,7 +639,7 @@ export class DisbursementService {
             projectAddress: fundStorageContract,
           },
         },
-        serviceTags:['disbursement']
+        serviceTags: ['disbursement'],
         // [ACTIONS.DISBURSEMENT.name],
       };
 

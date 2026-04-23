@@ -13,8 +13,8 @@ import { CommunicationModule } from './communication/communication.module';
   imports: [
     BullModule.forRoot({
       connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6380'),
+        host: process.env.REDIS_HOST ,
+        port: parseInt(process.env.REDIS_PORT ||''),
         password: process.env.REDIS_PASSWORD || '',
       },
     }),

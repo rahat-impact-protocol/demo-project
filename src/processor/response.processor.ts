@@ -27,8 +27,18 @@ export class ResponseProcessor extends WorkerHost {
   private async processDisbursement(data: any) {
     try {
       const { status, responsePayload, actionPerformed } = data;
-      const walletDetails = responsePayload?.updateData;
-      if (status === 'sucess') {
+      const walletDetails = (responsePayload?.updateData ?? []).flat().filter(Boolean);
+
+      if (!walletDetails.length) {
+        console.warn({
+          message: 'No wallet addresses found in response payload to update beneficiaries',
+          actionPerformed,
+          status,
+        });
+        return;
+      }
+
+      if (status === 'success') {
         await this.prisma.beneficiary.updateMany({
           where: {
             walletAddress: {
@@ -71,7 +81,7 @@ export class ResponseProcessor extends WorkerHost {
   @OnWorkerEvent('completed')
   async onCompleted(job: Job<any>, result: any) {
     console.log({
-      message: `Completed Response job ${job.id}: ${result?.success ? 'SUCCESS' : 'FAILED'}`,
+      message: `Completed Response job ${job.id}: ${result}`,
     });
   }
 

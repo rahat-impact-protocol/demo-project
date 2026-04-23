@@ -8,6 +8,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const _logger = new Logger(NestApplication.name);
 
+    const configuredOrigins = (process.env.CORS_ORIGINS ?? process.env.CORS_ORIGIN ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or Postman)
@@ -16,12 +21,34 @@ async function bootstrap() {
         return;
       }
 
-      // Allow any localhost origin during development
-      const isLocalhostOrigin =
+      // Always allow localhost origins during development
+      const isLocalOrigin =
         /^https?:\/\/localhost(?::\d+)?$/.test(origin) ||
         /^https?:\/\/127\.0\.0\.1(?::\d+)?$/.test(origin);
 
-      if (isLocalhostOrigin) {
+      if (isLocalOrigin) {
+        callback(null, true);
+        return;
+      }
+
+      // If no origins are configured, allow all
+      if (configuredOrigins.length === 0) {
+        callback(null, true);
+        return;
+      }
+
+      // Allow only origins that match the configured list (supports * wildcards)
+      const isAllowed = configuredOrigins.some((allowed) => {
+        if (allowed === '*') return true;
+        if (!allowed.includes('*')) return origin === allowed;
+        const pattern = allowed
+          .split('*')
+          .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+          .join('.*');
+        return new RegExp(`^${pattern}$`).test(origin);
+      });
+
+      if (isAllowed) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -34,8 +61,8 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('Token Disbursement Service')
-      .setDescription('API service for Token Disbursement')
+      .setTitle('CVA Project')
+      .setDescription('API service for CVA Project')
       .setVersion('1.0')
       // .addBearerAuth(
       //   { type: 'http', scheme: 'bearer', bearerFormat: APP.JWT_BEARER },
