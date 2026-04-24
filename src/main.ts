@@ -8,7 +8,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const _logger = new Logger(NestApplication.name);
 
-    const configuredOrigins = (process.env.CORS_ORIGINS ?? process.env.CORS_ORIGIN ?? '')
+  const configuredOrigins = (
+    process.env.CORS_ORIGINS ??
+    process.env.CORS_ORIGIN ??
+    ''
+  )
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
@@ -69,13 +73,6 @@ async function bootstrap() {
       //   APP.JWT_BEARER
       // )
       .build();
-
-    app.enableCors({
-      origin: 'http://localhost:3000', // your Vite dev server
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-      credentials: true,
-    });
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('swagger', app, document);
