@@ -239,11 +239,17 @@ export class CommunicationService {
       if (withPhone.length === 0) {
         throw new BadRequestException(`No phone number found`);
       }
-      await this.forwardToCore(
+      const response = await this.forwardToCore(
         withPhone.map((recipient) => recipient.phone),
         communication.message,
         'sendsms',
       );
+      return {
+        status: 'success',
+        message: 'SMS execution initiated',
+        smsUuid: id,
+        data: response,
+      };
     } catch (err) {
       throw err;
     }
