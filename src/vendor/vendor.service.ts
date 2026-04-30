@@ -1,14 +1,24 @@
-
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletService } from '../beneficiaries/wallet';
-import { PaginatedResult, PaginateOptions } from '@rumsan/sdk/types/pagination.types';
+import {
+  PaginatedResult,
+  PaginateOptions,
+} from '@rumsan/sdk/types/pagination.types';
 import { CreateVendorDto } from './dto/create-vendor.dto';
-import { PaginateFunction,Pagination } from '@rumsan/sdk/types';
+import { PaginateFunction, Pagination } from '@rumsan/sdk/types';
+import axios from 'axios';
 
 @Injectable()
 export class VendorService {
-  constructor(private prisma: PrismaService, private walletService: WalletService) {}
+  constructor(
+    private prisma: PrismaService,
+    private walletService: WalletService,
+  ) {}
 
   async addVendor(body: CreateVendorDto) {
     // Generate wallet if not provided
@@ -36,7 +46,9 @@ export class VendorService {
     return vendor;
   }
 
-  async listVendor(options: PaginateOptions = {}): Promise<PaginatedResult<any>> {
+  async listVendor(
+    options: PaginateOptions = {},
+  ): Promise<PaginatedResult<any>> {
     const page = Number(options.page) || 1;
     const perPage = Number(options.perPage) || 10;
     const skip = (page - 1) * perPage;
@@ -81,5 +93,97 @@ export class VendorService {
     const vendor = await this.prisma.vendor.findUnique({ where: { uuid } });
     if (!vendor) throw new NotFoundException('Vendor not found');
     return this.prisma.vendor.delete({ where: { uuid } });
+  }
+
+  async claimCreate(vendorId: string, data: any) {
+    const { amount, benAddress } = data;
+    const vendor = await this.prisma.vendor.findUnique({
+      where: {
+        uuid: vendorId,
+      },
+    });
+
+    const contractSettings = await this.prisma.settings.findUnique({
+      where: {
+        name: 'contract',
+      },
+    });
+    const settings: any = contractSettings?.value;
+    const tokenAddress = settings?.token?.address;
+    const projectAddress = settings?.fundStorageContract?.address;
+    const claimCreateRequest = {
+      requestData: {
+        data: {
+          tokenAddress,
+          projectAddress,
+          benAddress,
+          vendorAddress: vendor?.walletAddress,
+          amount,
+        },
+      },
+      serviceTags: ['claim-create'],
+    };
+    console.log(claimCreateRequest);
+
+    await this.forwardToCore(claimCreateRequest);
+  }
+
+  async verifyOtp(data: any) {
+    const { claimId, otp } = data;
+    const otpRequest = {
+      requestData: {
+        data: {
+          claimId,
+          otp,
+        },
+      },
+      serviceTags: ['otp-verify'],
+    };
+
+    await this.forwardToCore(otpRequest);
+  }
+
+  async forwardToCore(data) {
+    try {
+      const projectId = process.env.PROJECT_ID;
+      const core = process.env.CORE_URL;
+      const requestData = data;
+      requestData.projectId = projectId;
+
+      // const contractSettings = await this.prisma.settings.findUnique({
+      //   where: {
+      //     name: 'Contract',
+      //   },
+      // });
+      // const settings: any = contractSettings?.value;
+      // const tokenAddress = settings?.token?.address;
+      // const projectAddress = settings?.fundStorageContract?.address;
+      // const claimCreateRequest = {
+      //   projectId: projectId || '',
+      //   // requestData: {
+      //   //   data: {
+      //   //     tokenAddress,
+      //   //     projectAddress,
+      //   //     beneficiaryAddress,
+      //   //     vendorAddress,
+      //   //     amount,
+      //   //   },
+      //   // },
+      //   // serviceTags: ['claim-create'],
+      // };
+
+      const response = await axios.post(`${core}/request`, requestData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return {
+        status: 'success',
+        message: 'Claim Request forwarded to core',
+        data: response.data,
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 }
