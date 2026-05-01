@@ -1,4 +1,3 @@
-
 // import { ACTIONS } from '@rahat/token-disbursement-actions';
 
 export const PROCESSOR = {
@@ -6,6 +5,10 @@ export const PROCESSOR = {
 } as const;
 
 export const PROCESSOR_JOB = {
-  DISBURSEMENT: 'disbursement'
+  DISBURSEMENT: 'disbursement',
+  SENDSMS: 'sendSms',
+  CLAIMCREATE: 'claimCreate',
+  VERIFYOTP: 'verifyOTP',
+
   // ACTIONS.DISBURSEMENT.name,
 } as const;

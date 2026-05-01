@@ -103,6 +103,17 @@ export class VendorService {
       },
     });
 
+    const beneficiaryDetails = await this.prisma.beneficiary.findFirst({
+      where: {
+        walletAddress: benAddress,
+      },
+      select: {
+        pii: {
+          select: { phone: true },
+        },
+      },
+    });
+
     const contractSettings = await this.prisma.settings.findUnique({
       where: {
         name: 'contract',
@@ -119,9 +130,10 @@ export class VendorService {
           benAddress,
           vendorAddress: vendor?.walletAddress,
           amount,
+          phoneNumber: beneficiaryDetails?.pii?.phone,
         },
       },
-      serviceTags: ['claim-create'],
+      serviceTags: ['claimCreate'],
     };
     console.log(claimCreateRequest);
 
@@ -137,7 +149,7 @@ export class VendorService {
           otp,
         },
       },
-      serviceTags: ['otp-verify'],
+      serviceTags: ['verifyOtp'],
     };
 
     await this.forwardToCore(otpRequest);
