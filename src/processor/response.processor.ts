@@ -30,6 +30,16 @@ export class ResponseProcessor extends WorkerHost {
         const data = job.data as any;
         return this.processVerifyOtp(data);
       }
+
+      case PROCESSOR_JOB.REDEMPTIONREQUEST: {
+        const data = job.data as any;
+        return this.processRedemptionRequest(data);
+      }
+
+      case PROCESSOR_JOB.REDEMPTIONAPPROVAL: {
+        const data = job.data as any;
+        return this.processRedemptionApproval(data);
+      }
       default:
         throw new Error(`Unknown job type: ${job.name}`);
     }
@@ -93,6 +103,14 @@ export class ResponseProcessor extends WorkerHost {
   }
 
   private async processVerifyOtp(data: any) {
+    console.log(data);
+  }
+
+  private async processRedemptionRequest(data: any) {
+    console.log(data);
+  }
+
+  private async processRedemptionApproval(data: any) {
     console.log(data);
   }
 

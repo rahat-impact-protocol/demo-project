@@ -155,6 +155,69 @@ export class VendorService {
     await this.forwardToCore(otpRequest);
   }
 
+  async redemptionRequest(data: any) {
+    const { request, signature, vendorId } = data;
+    const vendor = await this.prisma.vendor.findUnique({
+      where: {
+        uuid: vendorId,
+      },
+      select: {
+        walletAddress: true,
+      },
+    });
+    const redemptionData = {
+      requestData: {
+        data: {
+          request,
+          signature,
+          vendorAddress: vendor?.walletAddress,
+        },
+      },
+      serviceTags: ['redemptionRequest'],
+    };
+    await this.forwardToCore(redemptionData);
+  }
+
+  async redemptionApproval(data: any) {
+    const { redemptionId } = data;
+    const contractSettings = await this.prisma.settings.findUnique({
+      where: {
+        name: 'contract',
+      },
+    });
+    const settings: any = contractSettings?.value;
+    const tokenAddress = settings?.token?.address;
+    const projectAddress = settings?.fundStorageContract?.address;
+
+    const redemptionDetails = await this.prisma.vendorRedemptions.findUnique({
+      where: {
+        uuid: redemptionId,
+      },
+      select: {
+        vendor: {
+          select: {
+            walletAddress: true,
+          },
+        },
+        amount: true,
+      },
+    });
+
+    const redemptionData = {
+      requestData: {
+        data: {
+          tokenAddress,
+          from: redemptionDetails?.vendor.walletAddress,
+          to: projectAddress,
+          amount: redemptionDetails?.amount,
+        },
+      },
+      serviceTags: ['redemptionApproval'],
+    };
+
+    await this.forwardToCore(redemptionData);
+  }
+
   async forwardToCore(data) {
     try {
       const projectId = process.env.PROJECT_ID;

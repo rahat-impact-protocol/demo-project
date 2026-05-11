@@ -48,4 +48,13 @@ export class VendorController {
   async verfiyOtp(@Body() data: any) {
     this.vendorService.verifyOtp(data);
   }
+
+  @Post('/redemptionsRequest/:vendorId')
+  async redemptionsRequest(@Body() data: any) {}
+
+  @Post('/redemptionApproval/:redemptionId')
+  async redemptionApproval(
+    @Param('redemptionId') redemptionId: string,
+    @Body() dto: any,
+  ) {}
 }

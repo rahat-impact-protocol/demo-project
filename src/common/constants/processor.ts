@@ -9,6 +9,8 @@ export const PROCESSOR_JOB = {
   SENDSMS: 'sendSms',
   CLAIMCREATE: 'claimCreate',
   VERIFYOTP: 'verifyOTP',
+  REDEMPTIONREQUEST: 'redemptionRequest',
+  REDEMPTIONAPPROVAL: 'redemptionApproval',
 
   // ACTIONS.DISBURSEMENT.name,
 } as const;

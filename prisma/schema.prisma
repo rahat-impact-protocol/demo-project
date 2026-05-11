@@ -102,11 +102,13 @@ model BeneficiaryWallet {
 }
 
 model Vendor {
+  id              Int               @id @default(autoincrement()) @db.Integer()
   uuid          String    @unique @default(uuid())
   name          String
   phoneNumber   String
   email         String?
   walletAddress String
+  vendorRedemption VendorRedemptions[] @relation("VendorRedemptions")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime?
 }
@@ -168,6 +170,18 @@ model BeneficiaryCommunication {
   @@map("tbl_ben_communication")
 }
 
+
+model VendorRedemptions{
+  id            Int       @id @default(autoincrement()) @db.Integer()
+  uuid          String    @unique @default(uuid())
+  vendorId      Int    
+  amount        String
+  status        VendorRedemptionsStatus @default(REQUESTED)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime? @updatedAt
+  vendor        Vendor    @relation("VendorRedemptions", fields:[vendorId], references: [id])
+}
+
 enum BeneficiaryType {
   INDIVIDUAL
   GROUP
@@ -202,4 +216,10 @@ enum DisbursementStatus {
 
 enum DisbursementType {
   Cash
+}
+
+enum VendorRedemptionsStatus{
+  REQUESTED
+  PENDING
+  APPROVED
 }
