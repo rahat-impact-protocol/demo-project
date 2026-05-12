@@ -59,11 +59,18 @@ export class VendorController {
   }
 
   @Post('/redemptionsRequest/:vendorId')
-  async redemptionsRequest(@Body() data: any) {}
+  async redemptionsRequest(
+    @Param('vendorId') vendorId: string,
+    @Body() data: any,
+  ) {
+    this.vendorService.redemptionRequest(data, vendorId);
+  }
 
   @Post('/redemptionApproval/:redemptionId')
   async redemptionApproval(
     @Param('redemptionId') redemptionId: string,
     @Body() dto: any,
-  ) {}
+  ) {
+    this.vendorService.redemptionApproval(redemptionId);
+  }
 }

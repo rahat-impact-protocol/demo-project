@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import { createHash, randomUUID } from 'crypto';
-import { Vendor, VendorAuthProvider } from '@prisma/client';
+import {
+  Vendor,
+  VendorAuthProvider,
+  VendorRedemptionsStatus,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletService } from '../beneficiaries/wallet';
 import {
@@ -311,16 +315,18 @@ export class VendorService {
     await this.forwardToCore(otpRequest);
   }
 
-  async redemptionRequest(data: any) {
-    const { request, signature, vendorId } = data;
+  async redemptionRequest(data: any, vendorId: string) {
+    const { request, signature, amount } = data;
     const vendor = await this.prisma.vendor.findUnique({
       where: {
         uuid: vendorId,
       },
       select: {
         walletAddress: true,
+        id: true,
       },
     });
+    if (!vendor) throw new Error('No vendor found');
     const redemptionData = {
       requestData: {
         data: {
@@ -331,11 +337,21 @@ export class VendorService {
       },
       serviceTags: ['redemptionRequest'],
     };
-    await this.forwardToCore(redemptionData);
+    const res = await this.forwardToCore(redemptionData);
+    if (res.status == 'success') {
+      const redemption = await this.prisma.vendorRedemptions.create({
+        data: {
+          vendorId: vendor?.id,
+          amount: amount,
+          status: VendorRedemptionsStatus?.REQUESTED,
+        },
+      });
+      return redemption;
+    }
   }
 
-  async redemptionApproval(data: any) {
-    const { redemptionId } = data;
+  async redemptionApproval(redemptionId: string) {
+    // const { redemptionId } = data;
     const contractSettings = await this.prisma.settings.findUnique({
       where: {
         name: 'contract',
