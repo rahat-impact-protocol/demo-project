@@ -8,15 +8,24 @@ import {
   Post,
 } from '@nestjs/common';
 import { VendorService } from './vendor.service';
-import { CreateVendorDto, UpdateVendorDto } from './dto/create-vendor.dto';
+import {
+  CreateVendorDto,
+  UpdateVendorDto,
+  VendorLoginDto,
+} from './dto/create-vendor.dto';
 
 @Controller('vendor')
 export class VendorController {
   constructor(private readonly vendorService: VendorService) {}
 
   @Post()
-  async addVendor(@Body() body: CreateVendorDto) {
-    return this.vendorService.addVendor(body);
+  async registerVendor(@Body() body: CreateVendorDto) {
+    return this.vendorService.registerVendor(body);
+  }
+
+  @Post('/login')
+  async loginVendor(@Body() body: VendorLoginDto) {
+    return this.vendorService.loginVendor(body);
   }
 
   @Get(':id')
