@@ -8,7 +8,7 @@ export const PROCESSOR_JOB = {
   DISBURSEMENT: 'disbursement',
   SENDSMS: 'sendSms',
   CLAIMCREATE: 'claimCreate',
-  VERIFYOTP: 'verifyOTP',
+  VERIFYOTP: 'verifyOtp',
   REDEMPTIONREQUEST: 'redemptionRequest',
   REDEMPTIONAPPROVAL: 'redemptionApproval',
 
