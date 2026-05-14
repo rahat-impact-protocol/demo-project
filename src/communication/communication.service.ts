@@ -242,7 +242,7 @@ export class CommunicationService {
       const response = await this.forwardToCore(
         withPhone.map((recipient) => recipient.phone),
         communication.message,
-        'sendsms',
+        'sendSms',
       );
       return {
         status: 'success',

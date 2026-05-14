@@ -12,7 +12,8 @@ async function main() {
       name: 'blockchain',
       value: {
         network: 'BaseSepolia',
-        rpcUrl: 'https://base-sepolia.g.alchemy.com/v2/yCToD_5zX3QBjftdawuUm5OTlAD6idH7',
+        rpcUrl:
+          'https://base-sepolia.g.alchemy.com/v2/yCToD_5zX3QBjftdawuUm5OTlAD6idH7',
         chainId: 84532,
         explorer: 'https://sepolia.basescan.org/',
       },
@@ -41,7 +42,7 @@ async function walletGeneration() {
   return wallet;
 }
 
-main()
+walletGeneration()
   .catch((e) => {
     console.error(e);
     process.exit(1);

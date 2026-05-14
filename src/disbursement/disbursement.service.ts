@@ -615,18 +615,15 @@ export class DisbursementService {
 
       const contractSettings = await this.prisma.settings.findUnique({
         where: {
-          name: 'Contract',
+          name: 'contract',
         },
       });
 
       const settings: any = contractSettings?.value;
-      const fundStorageContract =
-        settings?.fundStorageContract?.address ||
-        '0xe7f1725e7734ce288f8367e1bb143e90bb3f0512';
+      const fundStorageContract = settings?.fundStorageContract?.address;
+      // '0xe7f1725e7734ce288f8367e1bb143e90bb3f0512';
       console.log(fundStorageContract);
-      const tokenAddress =
-        settings?.token?.address ||
-        '0x5fbdb2315678afecb367f032d93f642f64180aa3';
+      const tokenAddress = settings?.token?.address;
 
       const disbursementRequest: DisbursementRequestDto = {
         projectId: projectId || '',

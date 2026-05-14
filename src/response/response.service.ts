@@ -10,7 +10,6 @@ export class ResponseService {
     @InjectQueue(PROCESSOR.RESPONSE) private readonly jobQueue: Queue,
   ) {}
   async receiveResponse(data: any) {
-    console.log(data);
     this.jobQueue.add(data?.actionPerformed, data);
     return { status: 'queued' };
   }

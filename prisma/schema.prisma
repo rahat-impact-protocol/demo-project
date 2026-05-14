@@ -102,13 +102,40 @@ model BeneficiaryWallet {
 }
 
 model Vendor {
+  id              Int               @id @default(autoincrement()) @db.Integer()
   uuid          String    @unique @default(uuid())
   name          String
-  phoneNumber   String
-  email         String?
+  phoneNumber   String?
+  email         String    @unique()
   walletAddress String
+  extras         Json?
+  vendorRedemption VendorRedemptions[] @relation("VendorRedemptions")
+  authSessions  VendorAuthSession[] @relation("VendorAuthSessions")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime?
+
+  @@map("tbl_vendor")
+
+}
+
+model VendorAuthSession {
+  id                Int                @id @default(autoincrement()) @db.Integer()
+  uuid              String             @unique @default(uuid())
+  sessionId         String             @unique
+  vendorId          Int
+  authProvider      VendorAuthProvider @default(GOOGLE)
+  providerSubject   String?
+  accessTokenHash   String
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  lastUsedAt        DateTime           @default(now())
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime?          @updatedAt
+  vendor            Vendor             @relation("VendorAuthSessions", fields: [vendorId], references: [id])
+
+  @@index([vendorId])
+  @@index([sessionId])
+  @@map("tbl_vendor_auth_session")
 }
 
 model BeneficiaryGroup {
@@ -168,6 +195,18 @@ model BeneficiaryCommunication {
   @@map("tbl_ben_communication")
 }
 
+
+model VendorRedemptions{
+  id            Int       @id @default(autoincrement()) @db.Integer()
+  uuid          String    @unique @default(uuid())
+  vendorId      Int    
+  amount        String
+  status        VendorRedemptionsStatus @default(REQUESTED)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime? @updatedAt
+  vendor        Vendor    @relation("VendorRedemptions", fields:[vendorId], references: [id])
+}
+
 enum BeneficiaryType {
   INDIVIDUAL
   GROUP
@@ -202,4 +241,15 @@ enum DisbursementStatus {
 
 enum DisbursementType {
   Cash
+}
+
+enum VendorRedemptionsStatus{
+  REQUESTED
+  PENDING
+  APPROVED
+}
+
+enum VendorAuthProvider {
+  GOOGLE
+  BACKEND
 }
