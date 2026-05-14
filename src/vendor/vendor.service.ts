@@ -1,31 +1,201 @@
-
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import jwt from 'jsonwebtoken';
+import { createHash, randomUUID } from 'crypto';
+import {
+  Vendor,
+  VendorAuthProvider,
+  VendorRedemptionsStatus,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletService } from '../beneficiaries/wallet';
-import { PaginatedResult, PaginateOptions } from '@rumsan/sdk/types/pagination.types';
-import { CreateVendorDto } from './dto/create-vendor.dto';
-import { PaginateFunction,Pagination } from '@rumsan/sdk/types';
+import {
+  PaginatedResult,
+  PaginateOptions,
+} from '@rumsan/sdk/types/pagination.types';
+import { CreateVendorDto, VendorLoginDto } from './dto/create-vendor.dto';
+import axios from 'axios';
 
 @Injectable()
 export class VendorService {
-  constructor(private prisma: PrismaService, private walletService: WalletService) {}
+  private readonly vendorAccessTokenTtlMs = 7 * 24 * 60 * 60 * 1000;
 
-  async addVendor(body: CreateVendorDto) {
-    // Generate wallet if not provided
+  constructor(
+    private prisma: PrismaService,
+    private walletService: WalletService,
+  ) {}
+
+  private normalizeAuthProvider(provider?: string): VendorAuthProvider {
+    if (provider?.toUpperCase() === 'BACKEND') {
+      return VendorAuthProvider.BACKEND;
+    }
+
+    return VendorAuthProvider.GOOGLE;
+  }
+
+  private hashAccessToken(accessToken: string) {
+    return createHash('sha256').update(accessToken).digest('hex');
+  }
+
+  private async createVendorSession(
+    vendor: Vendor,
+    authProvider?: string,
+    providerSubject?: string,
+  ) {
+    const sessionId = randomUUID();
+    const expiresAt = new Date(Date.now() + this.vendorAccessTokenTtlMs);
+    const normalizedProvider = this.normalizeAuthProvider(authProvider);
+    const accessToken = this.signVendorToken(vendor, sessionId);
+
+    const session = await this.prisma.vendorAuthSession.create({
+      data: {
+        sessionId,
+        vendorId: vendor.id,
+        authProvider: normalizedProvider,
+        providerSubject,
+        accessTokenHash: this.hashAccessToken(accessToken),
+        expiresAt,
+      },
+    });
+
+    return {
+      accessToken,
+      session,
+    };
+  }
+
+  private async buildVendorAuthResponse(
+    vendor: Vendor,
+    message: string,
+    authProvider?: string,
+    providerSubject?: string,
+  ) {
+    const { accessToken, session } = await this.createVendorSession(
+      vendor,
+      authProvider,
+      providerSubject,
+    );
+
+    return {
+      status: 'success',
+      message,
+      tokenType: 'Bearer',
+      accessToken,
+      session: {
+        sessionId: session.sessionId,
+        authProvider: session.authProvider,
+        expiresAt: session.expiresAt,
+      },
+      data: vendor,
+    };
+  }
+
+  private signVendorToken(vendor: Vendor, sessionId: string) {
+    const secret =
+      process.env.JWT_SECRET ||
+      process.env.ACCESS_TOKEN_SECRET ||
+      'vendor-session-secret';
+
+    return jwt.sign(
+      {
+        sub: vendor.uuid,
+        vendorId: vendor.uuid,
+        sid: sessionId,
+        email: vendor.email,
+        phoneNumber: vendor.phoneNumber,
+        name: vendor.name,
+        walletAddress: vendor.walletAddress,
+        role: 'vendor',
+      },
+      secret,
+      {
+        expiresIn: '7d',
+      },
+    );
+  }
+
+  private async findVendorByLoginField(login: VendorLoginDto): Promise<Vendor> {
+    const conditions = [] as Array<Record<string, string>>;
+
+    if (login.email) {
+      conditions.push({ email: login.email });
+    }
+
+    if (login.phoneNumber) {
+      conditions.push({ phoneNumber: login.phoneNumber });
+    }
+
+    if (!conditions.length) {
+      throw new BadRequestException(
+        'Email or phone number is required to login',
+      );
+    }
+
+    const vendor = await this.prisma.vendor.findFirst({
+      where: {
+        OR: conditions,
+      },
+    });
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+
+    return vendor;
+  }
+
+  async registerVendor(body: CreateVendorDto) {
+    const existingVendor = await this.prisma.vendor.findFirst({
+      where: {
+        OR: [
+          ...(body.email ? [{ email: body.email }] : []),
+          { phoneNumber: body.phoneNumber },
+        ],
+      },
+    });
+
+    if (existingVendor) {
+      return this.buildVendorAuthResponse(
+        existingVendor,
+        'Vendor already registered',
+        body.authProvider,
+        body.providerSubject,
+      );
+    }
+
     let walletAddress = body.walletAddress;
     if (!walletAddress) {
       walletAddress = await this.walletService.createWallet();
     }
-    // Store wallet in BeneficiaryWallet (already handled by WalletService)
+
     const vendor = await this.prisma.vendor.create({
       data: {
-        name: body.name,
+        name: body.name || '',
         phoneNumber: body.phoneNumber,
         email: body.email,
         walletAddress,
       },
     });
-    return vendor;
+
+    return this.buildVendorAuthResponse(
+      vendor,
+      'Vendor registered successfully',
+      body.authProvider,
+      body.providerSubject,
+    );
+  }
+
+  async loginVendor(body: VendorLoginDto) {
+    const vendor = await this.findVendorByLoginField(body);
+    return this.buildVendorAuthResponse(
+      vendor,
+      'Vendor login successful',
+      body.authProvider,
+      body.providerSubject,
+    );
   }
 
   async findOne(uuid: string) {
@@ -36,7 +206,17 @@ export class VendorService {
     return vendor;
   }
 
-  async listVendor(options: PaginateOptions = {}): Promise<PaginatedResult<any>> {
+  async findOneByEmail(email: string) {
+    const vendor = await this.prisma.vendor.findUnique({
+      where: { email },
+    });
+    if (!vendor) throw new NotFoundException('Vendor not found');
+    return vendor;
+  }
+
+  async listVendor(
+    options: PaginateOptions = {},
+  ): Promise<PaginatedResult<any>> {
     const page = Number(options.page) || 1;
     const perPage = Number(options.perPage) || 10;
     const skip = (page - 1) * perPage;
@@ -81,5 +261,184 @@ export class VendorService {
     const vendor = await this.prisma.vendor.findUnique({ where: { uuid } });
     if (!vendor) throw new NotFoundException('Vendor not found');
     return this.prisma.vendor.delete({ where: { uuid } });
+  }
+
+  async claimCreate(vendorId: string, data: any) {
+    const { amount, benAddress } = data;
+    const vendor = await this.prisma.vendor.findUnique({
+      where: {
+        uuid: vendorId,
+      },
+    });
+
+    const beneficiaryDetails = await this.prisma.beneficiary.findFirst({
+      where: {
+        walletAddress: benAddress,
+      },
+      select: {
+        pii: {
+          select: { phone: true },
+        },
+      },
+    });
+
+    const contractSettings = await this.prisma.settings.findUnique({
+      where: {
+        name: 'contract',
+      },
+    });
+    const settings: any = contractSettings?.value;
+    const tokenAddress = settings?.token?.address;
+    const projectAddress = settings?.fundStorageContract?.address;
+    const claimCreateRequest = {
+      requestData: {
+        data: {
+          tokenAddress,
+          projectAddress,
+          benAddress,
+          vendorAddress: vendor?.walletAddress,
+          amount,
+          phoneNumber: beneficiaryDetails?.pii?.phone,
+        },
+      },
+      serviceTags: ['claimCreate'],
+    };
+    console.log(claimCreateRequest);
+
+    await this.forwardToCore(claimCreateRequest);
+  }
+
+  async verifyOtp(data: any) {
+    const { claimId, otp } = data;
+    const otpRequest = {
+      requestData: {
+        data: {
+          claimId,
+          otp,
+        },
+      },
+      serviceTags: ['verifyOtp'],
+    };
+
+    await this.forwardToCore(otpRequest);
+  }
+
+  async redemptionRequest(data: any, vendorId: string) {
+    const { request, signature, amount } = data;
+    const vendor = await this.prisma.vendor.findUnique({
+      where: {
+        uuid: vendorId,
+      },
+      select: {
+        walletAddress: true,
+        id: true,
+      },
+    });
+    if (!vendor) throw new Error('No vendor found');
+    const redemptionData = {
+      requestData: {
+        data: {
+          request,
+          signature,
+          vendorAddress: vendor?.walletAddress,
+        },
+      },
+      serviceTags: ['redemptionRequest'],
+    };
+    const res = await this.forwardToCore(redemptionData);
+    if (res.status == 'success') {
+      const redemption = await this.prisma.vendorRedemptions.create({
+        data: {
+          vendorId: vendor?.id,
+          amount: amount,
+          status: VendorRedemptionsStatus?.REQUESTED,
+        },
+      });
+      return redemption;
+    }
+  }
+
+  async redemptionApproval(redemptionId: string) {
+    // const { redemptionId } = data;
+    const contractSettings = await this.prisma.settings.findUnique({
+      where: {
+        name: 'contract',
+      },
+    });
+    const settings: any = contractSettings?.value;
+    const tokenAddress = settings?.token?.address;
+    const projectAddress = settings?.fundStorageContract?.address;
+
+    const redemptionDetails = await this.prisma.vendorRedemptions.findUnique({
+      where: {
+        uuid: redemptionId,
+      },
+      select: {
+        vendor: {
+          select: {
+            walletAddress: true,
+          },
+        },
+        amount: true,
+      },
+    });
+
+    const redemptionData = {
+      requestData: {
+        data: {
+          tokenAddress,
+          from: redemptionDetails?.vendor.walletAddress,
+          to: projectAddress,
+          amount: redemptionDetails?.amount,
+        },
+      },
+      serviceTags: ['redemptionApproval'],
+    };
+
+    await this.forwardToCore(redemptionData);
+  }
+
+  async forwardToCore(data) {
+    try {
+      const projectId = process.env.PROJECT_ID;
+      const core = process.env.CORE_URL;
+      const requestData = data;
+      requestData.projectId = projectId;
+
+      // const contractSettings = await this.prisma.settings.findUnique({
+      //   where: {
+      //     name: 'Contract',
+      //   },
+      // });
+      // const settings: any = contractSettings?.value;
+      // const tokenAddress = settings?.token?.address;
+      // const projectAddress = settings?.fundStorageContract?.address;
+      // const claimCreateRequest = {
+      //   projectId: projectId || '',
+      //   // requestData: {
+      //   //   data: {
+      //   //     tokenAddress,
+      //   //     projectAddress,
+      //   //     beneficiaryAddress,
+      //   //     vendorAddress,
+      //   //     amount,
+      //   //   },
+      //   // },
+      //   // serviceTags: ['claim-create'],
+      // };
+
+      const response = await axios.post(`${core}/request`, requestData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return {
+        status: 'success',
+        message: 'Claim Request forwarded to core',
+        data: response.data,
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 }

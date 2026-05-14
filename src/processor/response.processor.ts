@@ -13,11 +13,32 @@ export class ResponseProcessor extends WorkerHost {
   }
 
   async process(job: Job<any, any, string>): Promise<any> {
-    console.log(job)
     switch (job.name) {
       case PROCESSOR_JOB.DISBURSEMENT: {
         const data = job.data as any;
         return this.processDisbursement(data);
+      }
+      case PROCESSOR_JOB.CLAIMCREATE: {
+        const data = job.data as any;
+        return this.processClaim(data);
+      }
+      case PROCESSOR_JOB.SENDSMS: {
+        const data = job.data as any;
+        return this.processSMS(data);
+      }
+      case PROCESSOR_JOB.VERIFYOTP: {
+        const data = job.data as any;
+        return this.processVerifyOtp(data);
+      }
+
+      case PROCESSOR_JOB.REDEMPTIONREQUEST: {
+        const data = job.data as any;
+        return this.processRedemptionRequest(data);
+      }
+
+      case PROCESSOR_JOB.REDEMPTIONAPPROVAL: {
+        const data = job.data as any;
+        return this.processRedemptionApproval(data);
       }
       default:
         throw new Error(`Unknown job type: ${job.name}`);
@@ -27,11 +48,14 @@ export class ResponseProcessor extends WorkerHost {
   private async processDisbursement(data: any) {
     try {
       const { status, responsePayload, actionPerformed } = data;
-      const walletDetails = (responsePayload?.updateData ?? []).flat().filter(Boolean);
+      const walletDetails = (responsePayload?.updateData ?? [])
+        .flat()
+        .filter(Boolean);
 
       if (!walletDetails.length) {
         console.warn({
-          message: 'No wallet addresses found in response payload to update beneficiaries',
+          message:
+            'No wallet addresses found in response payload to update beneficiaries',
           actionPerformed,
           status,
         });
@@ -42,25 +66,24 @@ export class ResponseProcessor extends WorkerHost {
         await this.prisma.beneficiary.updateMany({
           where: {
             walletAddress: {
-              in: walletDetails
+              in: walletDetails,
             },
           },
           data: {
             disbursementStatus: DisbursementStatus.DISBURSED,
           },
         });
-      }
-      else {
+      } else {
         await this.prisma.beneficiary.updateMany({
-            where:{
-                walletAddress:{
-                    in:walletDetails
-                }
+          where: {
+            walletAddress: {
+              in: walletDetails,
             },
-            data:{
-                disbursementStatus:DisbursementStatus.FAILED
-            }
-        })
+          },
+          data: {
+            disbursementStatus: DisbursementStatus.FAILED,
+          },
+        });
       }
     } catch (error) {
       console.error({
@@ -69,6 +92,26 @@ export class ResponseProcessor extends WorkerHost {
       });
       throw error;
     }
+  }
+
+  private async processSMS(data: any) {
+    console.log(data);
+  }
+
+  private async processClaim(data: any) {
+    console.log(data);
+  }
+
+  private async processVerifyOtp(data: any) {
+    console.log(data);
+  }
+
+  private async processRedemptionRequest(data: any) {
+    console.log(data);
+  }
+
+  private async processRedemptionApproval(data: any) {
+    console.log(data);
   }
 
   @OnWorkerEvent('active')
