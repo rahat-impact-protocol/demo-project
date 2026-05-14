@@ -33,6 +33,11 @@ export class VendorController {
     return this.vendorService.findOne(id);
   }
 
+  @Get('email/:email')
+  async findOneByEmail(@Param('email') email: string) {
+    return this.vendorService.findOneByEmail(email);
+  }
+
   @Get()
   async listVendor() {
     return this.vendorService.listVendor();

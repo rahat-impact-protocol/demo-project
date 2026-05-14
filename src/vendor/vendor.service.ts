@@ -206,6 +206,14 @@ export class VendorService {
     return vendor;
   }
 
+  async findOneByEmail(email: string) {
+    const vendor = await this.prisma.vendor.findUnique({
+      where: { email },
+    });
+    if (!vendor) throw new NotFoundException('Vendor not found');
+    return vendor;
+  }
+
   async listVendor(
     options: PaginateOptions = {},
   ): Promise<PaginatedResult<any>> {
