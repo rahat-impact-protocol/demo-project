@@ -8,13 +8,14 @@ import { ResponseModule } from './response/response.module';
 import { BullModule } from '@nestjs/bullmq';
 import { ProcessorModule } from './processor/processor.module';
 import { CommunicationModule } from './communication/communication.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
     BullModule.forRoot({
       connection: {
-        host: process.env.REDIS_HOST ,
-        port: parseInt(process.env.REDIS_PORT ||''),
+        host: process.env.REDIS_HOST,
+        port: parseInt(process.env.REDIS_PORT || ''),
         password: process.env.REDIS_PASSWORD || '',
       },
     }),
@@ -25,6 +26,7 @@ import { CommunicationModule } from './communication/communication.module';
     ResponseModule,
     ProcessorModule,
     CommunicationModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
