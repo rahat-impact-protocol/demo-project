@@ -46,7 +46,7 @@ export class BeneficiaryController {
     return this.beneficiaryService.deleteBeneficiary(id);
   }
 
-  @Get('/phoneNumber:/number')
+  @Get('/phoneNumber/:number')
   async getByPhone(@Param('phone') phoneNumber: string) {
     return this.beneficiaryService.getByPhone(phoneNumber);
   }
