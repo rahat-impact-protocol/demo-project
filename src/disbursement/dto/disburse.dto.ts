@@ -1,30 +1,30 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional } from "class-validator";
-import { DisbursementType } from "@prisma/client";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional } from 'class-validator';
+import { DisbursementType } from '@prisma/client';
 
 export class DisbursementDataDto {
-  tokenAddress: string;
-  benAddress: string[];
-  amount: number[];
-  totalAmount: number;
-  projectAddress: string;
+  tokenAddress!: string;
+  benAddress!: string[];
+  amount!: number[];
+  totalAmount!: number;
+  projectAddress!: string;
 }
 
 export class DisbursementRequestDto {
-  projectId: string;
-  requestData: {
+  projectId!: string;
+  requestData!: {
     data: DisbursementDataDto;
   };
-  serviceTags: string[];
+  serviceTags!: string[];
 }
 
 export class CreateDisbursementDto {
-  benAddress: string[];
-  amount: number;
-  totalBen?:number;
-  totalAmount?:number;
-  name?:string
-  type?:DisbursementType
+  benAddress!: string[];
+  amount!: number;
+  totalBen?: number;
+  totalAmount?: number;
+  name?: string;
+  type?: DisbursementType;
 }
 
 export class CreateGroupDisbursementDto {
@@ -38,16 +38,15 @@ export class CreateGroupDisbursementDto {
   @IsOptional()
   totalBen?: number;
 
-  @ApiProperty({example:'100', required:false})
+  @ApiProperty({ example: '100', required: false })
   @IsOptional()
-  totalAmount?:number;
+  totalAmount?: number;
 
-
-  @ApiProperty({example:'test disbursement', required:false})
+  @ApiProperty({ example: 'test disbursement', required: false })
   @IsOptional()
-  name?:string;
+  name?: string;
 
-  @ApiProperty({example:'test disbursement', required:false})
+  @ApiProperty({ example: 'test disbursement', required: false })
   @IsOptional()
-  type?:DisbursementType; 
+  type?: DisbursementType;
 }

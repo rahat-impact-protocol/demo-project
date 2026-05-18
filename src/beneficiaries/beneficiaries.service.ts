@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   CreateBeneficiaryDto,
@@ -21,6 +22,16 @@ export class BeneficiaryService {
     const { walletAddress } = createBeneficiaryDto;
     benAddress = walletAddress;
 
+    const existingBen = await this.prisma.beneficiaryPii.findUnique({
+      where: {
+        phone: createBeneficiaryDto?.phone,
+      },
+    });
+
+    if (existingBen) {
+      throw new BadRequestException('Phone number already exists');
+    }
+
     if (!walletAddress) {
       benAddress = await this.wallet.createWallet();
     }
@@ -30,6 +41,7 @@ export class BeneficiaryService {
         this.prisma.beneficiary.create({
           data: {
             walletAddress: benAddress,
+            gender: createBeneficiaryDto?.gender,
             pii: {
               create: {
                 name: createBeneficiaryDto?.name,
@@ -44,6 +56,13 @@ export class BeneficiaryService {
 
       return benDetails;
     } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        throw new BadRequestException('Phone number already exists');
+      }
+
       throw new Error(err instanceof Error ? err.message : String(err));
     }
   }
