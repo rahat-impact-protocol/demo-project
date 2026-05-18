@@ -9,6 +9,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ProcessorModule } from './processor/processor.module';
 import { CommunicationModule } from './communication/communication.module';
 import { SettingsModule } from './settings/settings.module';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { SettingsModule } from './settings/settings.module';
     ProcessorModule,
     CommunicationModule,
     SettingsModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
