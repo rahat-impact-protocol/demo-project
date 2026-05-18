@@ -59,6 +59,11 @@ export class UpdateVendorDto {
   @IsOptional()
   name?: string;
 
+  @ApiProperty({ example: 'joe', required: false })
+  @IsString()
+  @IsOptional()
+  walletAddress?: string;
+
   @ApiProperty({ example: '+977956', required: true })
   @IsString()
   phoneNumber?: string;

@@ -46,6 +46,11 @@ export class BeneficiaryController {
     return this.beneficiaryService.deleteBeneficiary(id);
   }
 
+  @Get('/phoneNumber:/number')
+  async getByPhone(@Param('phone') phoneNumber: string) {
+    return this.beneficiaryService.getByPhone(phoneNumber);
+  }
+
   @Post('/group')
   async createBeneficiaryGroup(@Body() body: CreateBeneficiaryGroupDto) {
     return this.beneficiaryGroupService.createGroup(body);

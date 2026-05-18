@@ -313,6 +313,27 @@ export class BeneficiaryService {
     };
   }
 
+  async getByPhone(phoneNumber: string) {
+    try {
+      const benDetails = await this.prisma.beneficiaryPii.findUnique({
+        where: {
+          phone: phoneNumber,
+        },
+        select: {
+          name: true,
+          beneficiary: {
+            select: {
+              walletAddress: true,
+            },
+          },
+        },
+      });
+      return benDetails;
+    } catch (err) {
+      throw err;
+    }
+  }
+
   async deleteBeneficiary(id: string) {
     return this.prisma.beneficiary.delete({ where: { uuid: id } });
   }

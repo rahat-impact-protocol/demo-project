@@ -43,7 +43,7 @@ export class VendorController {
     return this.vendorService.listVendor();
   }
 
-  @Patch('/update/;id')
+  @Patch('/update/:id')
   async updateVendor(@Param('id') id: string, @Body() data: UpdateVendorDto) {
     return this.vendorService.updateVendor(id, data);
   }
