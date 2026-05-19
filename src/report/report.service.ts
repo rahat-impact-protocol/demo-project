@@ -72,5 +72,10 @@ export class ReportService {
       benDis,
     };
   }
-  async getVendorReport() {}
+  async getVendorReport() {
+    const [totalVendor] = await Promise.all([this.prisma.vendor.count()]);
+    return {
+      totalVendor,
+    };
+  }
 }
