@@ -19,6 +19,7 @@ import {
   CreateBeneficiaryDto,
   CreateBeneficiaryGroupDto,
   ListBeneficiaryDto,
+  ListBeneficiaryTxnDto,
 } from './dto/create-beneficiary.dto';
 import { BeneficiaryGroupService } from './beneficiaries.group.service';
 import { CsvFileValidator } from './filevalidator';
@@ -110,5 +111,13 @@ export class BeneficiaryController {
   @Get('/group/:id')
   async getGroupById(@Param('id') id: number) {
     return this.beneficiaryGroupService.getGroupById(+id);
+  }
+
+  @Get('/transaction/:benAddress')
+  async getBeneficiaryTransaction(
+    @Param('benAddress') benAddress: string,
+    @Query() query: ListBeneficiaryTxnDto,
+  ) {
+    return this.beneficiaryService.getBeneficiaryTransaction(benAddress, query);
   }
 }

@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import axios from 'axios';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { TxnReportDto } from './dto/report.dto';
 
 @Injectable()
 export class ReportService {
@@ -77,5 +79,22 @@ export class ReportService {
     return {
       totalVendor,
     };
+  }
+
+  async getProjectTransaction(query?: TxnReportDto) {
+    const projectId = process.env.PROJECT_ID;
+    const core = process.env.CORE_URL;
+
+    const txnRequest = {
+      projectId: projectId || '',
+      data: {
+        requestParam: projectId,
+        query,
+      },
+      serviceTags: ['txnlist'],
+    };
+
+    const response = await axios.get(`${core}/request`, { params: txnRequest });
+    return response.data;
   }
 }

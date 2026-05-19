@@ -4,11 +4,13 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import {
   CreateBeneficiaryDto,
   ListBeneficiaryDto,
+  ListBeneficiaryTxnDto,
 } from './dto/create-beneficiary.dto';
 import { WalletService } from 'src/beneficiaries/wallet';
 import { PaginatedResult, PaginateOptions } from '@rumsan/sdk/types';
 import * as readline from 'node:readline';
 import { Readable } from 'node:stream';
+import axios from 'axios';
 
 @Injectable()
 export class BeneficiaryService {
@@ -333,6 +335,7 @@ export class BeneficiaryService {
   }
 
   async getByPhone(phoneNumber: string) {
+    console.log(phoneNumber);
     try {
       const benDetails = await this.prisma.beneficiaryPii.findUnique({
         where: {
@@ -355,5 +358,25 @@ export class BeneficiaryService {
 
   async deleteBeneficiary(id: string) {
     return this.prisma.beneficiary.delete({ where: { uuid: id } });
+  }
+
+  async getBeneficiaryTransaction(
+    benAddress: string,
+    query: ListBeneficiaryTxnDto,
+  ) {
+    const projectId = process.env.PROJECT_ID;
+    const core = process.env.CORE_URL;
+
+    const txnRequest = {
+      projectId: projectId || '',
+      data: {
+        requestParam: benAddress,
+        query,
+      },
+      serviceTags: ['benTxn'],
+    };
+
+    const response = await axios.get(`${core}/request`, { params: txnRequest });
+    return response.data;
   }
 }
