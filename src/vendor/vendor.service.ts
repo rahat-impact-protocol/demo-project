@@ -305,7 +305,7 @@ export class VendorService {
     };
     console.log(claimCreateRequest);
 
-    await this.forwardToCore(claimCreateRequest);
+    return await this.forwardToCore(claimCreateRequest);
   }
 
   async verifyOtp(data: any) {
@@ -320,7 +320,7 @@ export class VendorService {
       serviceTags: ['verifyOtp'],
     };
 
-    await this.forwardToCore(otpRequest);
+    return await this.forwardToCore(otpRequest);
   }
 
   async redemptionRequest(data: any, vendorId: string) {
@@ -354,8 +354,9 @@ export class VendorService {
           status: VendorRedemptionsStatus?.REQUESTED,
         },
       });
-      return redemption;
+      return { redemption, coreResponse: res };
     }
+    return res;
   }
 
   async redemptionApproval(redemptionId: string) {
@@ -395,7 +396,7 @@ export class VendorService {
       serviceTags: ['redemptionApproval'],
     };
 
-    await this.forwardToCore(redemptionData);
+    return await this.forwardToCore(redemptionData);
   }
 
   async forwardToCore(data) {
@@ -434,7 +435,7 @@ export class VendorService {
       });
       return {
         status: 'success',
-        message: 'Claim Request forwarded to core',
+        message: 'Request forwarded to core',
         data: response.data,
       };
     } catch (err) {

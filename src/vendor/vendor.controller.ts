@@ -9,9 +9,11 @@ import {
 } from '@nestjs/common';
 import { VendorService } from './vendor.service';
 import {
+  CreateClaimDto,
   CreateVendorDto,
   UpdateVendorDto,
   VendorLoginDto,
+  VerifyOtpDto,
 } from './dto/create-vendor.dto';
 
 @Controller('vendor')
@@ -54,13 +56,16 @@ export class VendorController {
   }
 
   @Post('/claimcreate/:vendorId')
-  async claimCreate(@Param('vendorId') vendorId: string, @Body() data: any) {
-    this.vendorService.claimCreate(vendorId, data);
+  async claimCreate(
+    @Param('vendorId') vendorId: string,
+    @Body() data: CreateClaimDto,
+  ) {
+    return this.vendorService.claimCreate(vendorId, data);
   }
 
   @Post('/verfiyotp')
-  async verfiyOtp(@Body() data: any) {
-    this.vendorService.verifyOtp(data);
+  async verfiyOtp(@Body() data: VerifyOtpDto) {
+    return this.vendorService.verifyOtp(data);
   }
 
   @Post('/redemptionsRequest/:vendorId')
@@ -68,7 +73,7 @@ export class VendorController {
     @Param('vendorId') vendorId: string,
     @Body() data: any,
   ) {
-    this.vendorService.redemptionRequest(data, vendorId);
+    return this.vendorService.redemptionRequest(data, vendorId);
   }
 
   @Post('/redemptionApproval/:redemptionId')
@@ -76,6 +81,6 @@ export class VendorController {
     @Param('redemptionId') redemptionId: string,
     @Body() dto: any,
   ) {
-    this.vendorService.redemptionApproval(redemptionId);
+    return this.vendorService.redemptionApproval(redemptionId);
   }
 }

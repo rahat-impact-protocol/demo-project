@@ -98,3 +98,23 @@ export class ListVendorDto {
   @IsOptional()
   walletAddress?: string;
 }
+
+export class CreateClaimDto {
+  @ApiProperty({ example: '1200', required: true })
+  @IsString()
+  amount!: string;
+
+  @ApiProperty({ example: '0x1wrfgth', required: true })
+  @IsString()
+  benAddress?: string;
+}
+
+export class VerifyOtpDto {
+  @ApiProperty({ example: '0', required: true })
+  @IsString()
+  claimId!: string;
+
+  @ApiProperty({ example: '345678', required: true })
+  @IsString()
+  otp!: string;
+}
