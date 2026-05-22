@@ -63,9 +63,12 @@ export class VendorController {
     return this.vendorService.claimCreate(vendorId, data);
   }
 
-  @Post('/verfiyotp')
-  async verfiyOtp(@Body() data: VerifyOtpDto) {
-    return this.vendorService.verifyOtp(data);
+  @Post('/verifyotp/:vendorId')
+  async verfiyOtp(
+    @Param('vendorId') vendorId: string,
+    @Body() data: VerifyOtpDto,
+  ) {
+    return this.vendorService.verifyOtp(vendorId, data);
   }
 
   @Post('/redemptionsRequest/:vendorId')

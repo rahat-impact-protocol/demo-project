@@ -16,7 +16,11 @@ import {
   PaginatedResult,
   PaginateOptions,
 } from '@rumsan/sdk/types/pagination.types';
-import { CreateVendorDto, VendorLoginDto } from './dto/create-vendor.dto';
+import {
+  CreateClaimDto,
+  CreateVendorDto,
+  VendorLoginDto,
+} from './dto/create-vendor.dto';
 import axios from 'axios';
 
 @Injectable()
@@ -263,7 +267,7 @@ export class VendorService {
     return this.prisma.vendor.delete({ where: { uuid } });
   }
 
-  async claimCreate(vendorId: string, data: any) {
+  async claimCreate(vendorId: string, data: CreateClaimDto) {
     const { amount, benAddress } = data;
     const vendor = await this.prisma.vendor.findUnique({
       where: {
@@ -308,12 +312,22 @@ export class VendorService {
     return await this.forwardToCore(claimCreateRequest);
   }
 
-  async verifyOtp(data: any) {
-    const { claimId, otp } = data;
+  async verifyOtp(vendorId: string, data: any) {
+    const { benAddress, otp } = data;
+    const vendor = await this.prisma.vendor.findUnique({
+      where: {
+        uuid: vendorId,
+      },
+      select: {
+        walletAddress: true,
+      },
+    });
+
     const otpRequest = {
       requestData: {
         data: {
-          claimId,
+          vendorAddress: vendor?.walletAddress,
+          benAddress,
           otp,
         },
       },

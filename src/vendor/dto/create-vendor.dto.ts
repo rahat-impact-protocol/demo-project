@@ -110,9 +110,9 @@ export class CreateClaimDto {
 }
 
 export class VerifyOtpDto {
-  @ApiProperty({ example: '0', required: true })
+  @ApiProperty({ example: '0x1wrfgth', required: true })
   @IsString()
-  claimId!: string;
+  benAddress!: string;
 
   @ApiProperty({ example: '345678', required: true })
   @IsString()
