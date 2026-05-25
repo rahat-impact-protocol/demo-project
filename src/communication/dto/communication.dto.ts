@@ -92,15 +92,16 @@ export class ListCommunicationQueryDto {
     default: 1,
   })
   @IsOptional()
-  page?: number = 1;
+  @IsString()
+  page?: string;
 
   @ApiPropertyOptional({
     example: 20,
     description: 'Items per page',
     default: 20,
   })
-  @IsOptional()
-  limit?: number = 20;
+  @IsString()
+  limit?: string;
 
   @ApiPropertyOptional({
     example: 'SMS',

@@ -1,14 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class TxnReportDto {
   @ApiProperty({ example: 1, required: false })
-  @IsNumber()
+  @IsString()
   @IsOptional()
-  page?: number;
+  page?: string;
 
   @ApiProperty({ example: 1, required: false })
-  @IsNumber()
+  @IsString()
   @IsOptional()
-  perPage?: number;
+  perPage?: string;
 }
