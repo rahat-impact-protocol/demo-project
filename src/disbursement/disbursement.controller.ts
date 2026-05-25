@@ -11,7 +11,7 @@ export class DisbursementController {
   constructor(private readonly disbursementService: DisbursementService) {}
 
   @Post()
-  async createDisbursement(@Body() payload: CreateDisbursementDto) {
+  async createDisbursement(@Body() payload: any) {
     return this.disbursementService.createDisbursement(payload);
   }
 
@@ -27,8 +27,8 @@ export class DisbursementController {
   }
 
   @Get('/:id')
-  async getDisbursementDetails(@Param('id')uuid:string){
-    return this.disbursementService.getDisbursementDetails(uuid)
+  async getDisbursementDetails(@Param('id') uuid: string) {
+    return this.disbursementService.getDisbursementDetails(uuid);
   }
 
   // @Post('disburse/ben/:id')
