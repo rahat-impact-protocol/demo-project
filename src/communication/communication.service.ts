@@ -113,7 +113,7 @@ export class CommunicationService {
     }
 
     // Calculate pagination offsets
-    const skip = (page - 1) * limit;
+    const skip = (+page - 1) * +limit;
 
     // Get total count for pagination
     const total = await this.prisma.communication.count({
@@ -124,7 +124,7 @@ export class CommunicationService {
     const communications = await this.prisma.communication.findMany({
       where: whereClause,
       skip,
-      take: limit,
+      take: +limit,
       orderBy: {
         createdAt: 'desc',
       },
@@ -171,7 +171,7 @@ export class CommunicationService {
       createdAt: comm.createdAt,
       updatedAt: comm.updatedAt,
       benType: comm.benType,
-      beneficiaries: comm.benCommunication.map((bc) => ({
+      beneficiaries: comm?.benCommunication.map((bc) => ({
         id: bc.beneficiary.id,
         uuid: bc.beneficiary.uuid,
         phone: bc.beneficiary.pii?.phone,
@@ -180,7 +180,7 @@ export class CommunicationService {
     }));
 
     // Calculate total pages
-    const pages = Math.ceil(total / limit);
+    const pages = Math.ceil(total / +limit);
 
     return {
       data,
