@@ -52,6 +52,11 @@ export class BeneficiaryController {
     return this.beneficiaryService.getByPhone(phoneNumber);
   }
 
+  @Get('/wallet/:walletAddress')
+  async getByWallet(@Param('walletAddress') walletAddress: string) {
+    return this.beneficiaryService.getByWallet(walletAddress);
+  }
+
   @Post('/group')
   async createBeneficiaryGroup(@Body() body: CreateBeneficiaryGroupDto) {
     return this.beneficiaryGroupService.createGroup(body);

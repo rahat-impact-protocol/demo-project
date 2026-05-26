@@ -335,7 +335,6 @@ export class BeneficiaryService {
   }
 
   async getByPhone(phoneNumber: string) {
-    console.log(phoneNumber);
     try {
       const benDetails = await this.prisma.beneficiaryPii.findUnique({
         where: {
@@ -350,7 +349,39 @@ export class BeneficiaryService {
           },
         },
       });
-      return benDetails;
+      const bendetails = {
+        name: benDetails?.name,
+        phone: phoneNumber,
+        walletAddress: benDetails?.beneficiary?.walletAddress,
+      };
+      return bendetails;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async getByWallet(walletAddress: string) {
+    try {
+      const benDetails = await this.prisma.beneficiary.findFirst({
+        where: {
+          walletAddress: walletAddress,
+        },
+        select: {
+          pii: {
+            select: {
+              name: true,
+              phone: true,
+            },
+          },
+          walletAddress: true,
+        },
+      });
+      const bendetails = {
+        name: benDetails?.pii?.name,
+        phone: benDetails?.pii?.phone,
+        walletAddress: benDetails?.walletAddress,
+      };
+      return bendetails;
     } catch (err) {
       throw err;
     }
@@ -371,7 +402,7 @@ export class BeneficiaryService {
       projectId: projectId || '',
       data: {
         requestParam: benAddress,
-        query,
+        query: { ...query },
       },
       serviceTags: ['benTxn'],
     };

@@ -49,6 +49,7 @@ export class DisbursementService {
   }
 
   async createDisbursement(payload: CreateDisbursementDto) {
+    console.log(payload);
     try {
       const { benAddress, amount, totalAmount, totalBen, name, type } = payload;
 
