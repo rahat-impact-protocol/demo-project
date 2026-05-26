@@ -6,11 +6,13 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { VendorService } from './vendor.service';
 import {
   CreateClaimDto,
   CreateVendorDto,
+  ListVendorTxnDto,
   UpdateVendorDto,
   VendorLoginDto,
   VerifyOtpDto,
@@ -85,5 +87,13 @@ export class VendorController {
     @Body() dto: any,
   ) {
     return this.vendorService.redemptionApproval(redemptionId);
+  }
+
+  @Get('/transaction/:vendorAddress')
+  async getVendorTransaction(
+    @Param('vendorAddress') vendorAddress: string,
+    @Query() query: ListVendorTxnDto,
+  ) {
+    return this.vendorService.getVendorTransaction(vendorAddress, query);
   }
 }

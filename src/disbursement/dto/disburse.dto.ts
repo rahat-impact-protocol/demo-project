@@ -1,38 +1,66 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { DisbursementType } from '@prisma/client';
 
-export class DisbursementDataDto {
-  tokenAddress!: string;
-  benAddress!: string[];
-  amount!: number[];
-  totalAmount!: number;
-  projectAddress!: string;
+export interface DisbursementDataDto {
+  tokenAddress: string;
+  benAddress: string[];
+  amount: number[];
+  totalAmount: number;
+  projectAddress: string;
 }
 
-export class DisbursementRequestDto {
-  projectId!: string;
-  requestData!: {
+export interface DisbursementRequestDto {
+  projectId: string;
+  requestData: {
     data: DisbursementDataDto;
   };
-  serviceTags!: string[];
+  serviceTags: string[];
 }
 
 export class CreateDisbursementDto {
+  @ApiProperty({ example: '0x1234', required: true })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
   benAddress!: string[];
+
+  @ApiProperty({ example: 10, required: true })
+  @IsNumber()
   amount!: number;
+
+  @ApiProperty({ example: 5, required: false })
+  @IsOptional()
+  @IsNumber()
   totalBen?: number;
+
+  @ApiProperty({ example: 10, required: false })
+  @IsOptional()
+  @IsNumber()
   totalAmount?: number;
+
+  @ApiProperty({ example: 'test disbursement', required: false })
+  @IsOptional()
+  @IsString()
   name?: string;
+
+  @ApiProperty({ example: 'test disbursement', required: false })
+  @IsString()
   type?: DisbursementType;
 }
 
 export class CreateGroupDisbursementDto {
   @ApiProperty({ example: '2', required: true })
-  groupId: number;
+  groupId!: number;
 
   @ApiProperty({ example: '20', required: true })
-  amount: number;
+  amount!: number;
 
   @ApiProperty({ example: '5', required: true })
   @IsOptional()

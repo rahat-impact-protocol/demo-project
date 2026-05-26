@@ -19,6 +19,7 @@ import {
 import {
   CreateClaimDto,
   CreateVendorDto,
+  ListVendorTxnDto,
   VendorLoginDto,
 } from './dto/create-vendor.dto';
 import axios from 'axios';
@@ -411,6 +412,22 @@ export class VendorService {
     };
 
     return await this.forwardToCore(redemptionData);
+  }
+
+  async getVendorTransaction(vendorAddress: string, query: ListVendorTxnDto) {
+    const projectId = process.env.PROJECT_ID;
+    const core = process.env.CORE_URL;
+
+    const txnRequest = {
+      projectId: projectId || '',
+      data: {
+        requestParam: vendorAddress,
+        query: { ...query },
+      },
+      serviceTags: ['vendorTxn'],
+    };
+    const response = await axios.get(`${core}/request`, { params: txnRequest });
+    return response.data;
   }
 
   async forwardToCore(data) {

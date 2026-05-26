@@ -118,3 +118,15 @@ export class VerifyOtpDto {
   @IsString()
   otp!: string;
 }
+
+export class ListVendorTxnDto {
+  @ApiProperty({ example: 1, required: false })
+  @IsString()
+  @IsOptional()
+  page?: string;
+
+  @ApiProperty({ example: 1, required: false })
+  @IsString()
+  @IsOptional()
+  perPage?: string;
+}

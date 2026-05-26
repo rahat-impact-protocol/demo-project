@@ -11,7 +11,7 @@ export class DisbursementController {
   constructor(private readonly disbursementService: DisbursementService) {}
 
   @Post()
-  async createDisbursement(@Body() payload: any) {
+  async createDisbursement(@Body() payload: CreateDisbursementDto) {
     return this.disbursementService.createDisbursement(payload);
   }
 
