@@ -11,9 +11,10 @@ import { DisbursementType } from '@prisma/client';
 export interface DisbursementDataDto {
   tokenAddress: string;
   benAddress: string[];
-  amount: number[];
-  totalAmount: number;
+  amount: string[];
+  totalAmount: string;
   projectAddress: string;
+  decimal: number;
 }
 
 export interface DisbursementRequestDto {

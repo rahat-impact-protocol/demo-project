@@ -11,6 +11,8 @@ import {
   CreateGroupDisbursementDto,
 } from './dto/disburse.dto';
 import { DisbursementStatus, DisbursementType } from '@prisma/client';
+import { createContractInstance, parseAmount } from 'src/utils/transaction';
+import { tokenAbi } from 'src/utils/abi/token';
 // import { ACTIONS } from '@rahat/token-disbursement-actions';
 
 @Injectable()
@@ -263,7 +265,11 @@ export class DisbursementService {
   }
   async executeDisbursement(disbursementUuid: string) {
     let beneficiaryIds: number[] = [];
-
+    const tokenContractInstance = await createContractInstance(
+      tokenAbi,
+      'token',
+    );
+    const decimals = await tokenContractInstance.decimals();
     try {
       const disbursementData = await this.prisma.$transaction(async (tx) => {
         const data = await tx.disbursement.findUnique({
@@ -311,10 +317,19 @@ export class DisbursementService {
           },
         });
 
+        const parsedAmount = await parseAmount(
+          data.amountPerBen?.toString(),
+          decimals,
+        );
+        const totalParsedAmount = await parseAmount(
+          data.totalAmount?.toString(),
+          decimals,
+        );
+
         return {
           uuid: data.uuid,
-          amountPerBen: data.amountPerBen,
-          totalAmount: data.totalAmount,
+          amountPerBen: parsedAmount?.toString(),
+          totalAmount: totalParsedAmount?.toString(),
           beneficiaries,
         };
       });
@@ -326,6 +341,7 @@ export class DisbursementService {
       const benAddress = disbursementData.beneficiaries.map(
         (beneficiary) => beneficiary.walletAddress,
       );
+
       const amount = disbursementData.beneficiaries.map(
         () => disbursementData.amountPerBen,
       );
@@ -334,6 +350,7 @@ export class DisbursementService {
         benAddress,
         amount,
         disbursementData.totalAmount,
+        decimals,
       );
 
       return {
@@ -376,6 +393,11 @@ export class DisbursementService {
   async alldisburse() {
     let disbursementData;
     try {
+      const tokenContractInstance = await createContractInstance(
+        tokenAbi,
+        'token',
+      );
+      const decimals = await tokenContractInstance.decimals();
       // const projectId = process.env.PROJECT_ID;
       // const core = process.env.CORE_URL;
       // // Query core details from database
@@ -431,7 +453,7 @@ export class DisbursementService {
       const benAddress = disbursementData.map((d) => d.walletAddress);
       const amount = disbursementData.map((d) => d.disbursementAmount || 0);
       const totalAmount = amount.reduce((acc, curr) => acc + curr, 0);
-      await this.forwardToCore(benAddress, amount, totalAmount);
+      await this.forwardToCore(benAddress, amount, totalAmount, decimals);
 
       // Validate required fields
       // if (!payload.tokenAddress || !details. || !payload.amount || !payload?.projectId) {
@@ -458,6 +480,11 @@ export class DisbursementService {
   }
 
   async disburseToBen(benId: string) {
+    const tokenContractInstance = await createContractInstance(
+      tokenAbi,
+      'token',
+    );
+    const decimals = await tokenContractInstance.decimals();
     const data = await this.prisma.beneficiary.update({
       where: {
         uuid: benId,
@@ -473,15 +500,23 @@ export class DisbursementService {
     });
 
     const benAddress = [data?.walletAddress];
-    const amount = [Number(data?.disbursementAmount)];
-    const totalAmount = Number(amount);
+    const amount = await parseAmount(
+      (data?.disbursementAmount || 0)?.toString(),
+      decimals,
+    )?.toString();
+    const totalAmount = amount.toString();
 
-    await this.forwardToCore(benAddress, amount, totalAmount);
+    await this.forwardToCore(benAddress, [amount], totalAmount, decimals);
   }
 
   async disburseToGroup(groupId: number) {
     let benData;
     try {
+      const tokenContractInstance = await createContractInstance(
+        tokenAbi,
+        'token',
+      );
+      const decimals = await tokenContractInstance.decimals();
       benData = await this.prisma.$transaction(async (tx) => {
         const data = await tx.beneficiaryGroupMember.findMany({
           where: {
@@ -521,7 +556,7 @@ export class DisbursementService {
       const amount = benData.map((d) => d.disbursementAmount || 0);
       const totalAmount = amount.reduce((acc, curr) => acc + curr, 0);
 
-      await this.forwardToCore(benAddress, amount, totalAmount);
+      await this.forwardToCore(benAddress, amount, totalAmount, decimals);
     } catch (err) {
       if (err.response?.status === 400 || err.response?.status === 404) {
         throw err;
@@ -546,6 +581,11 @@ export class DisbursementService {
   async disburseToMultiBen(benIds: string[]) {
     let benData;
     try {
+      const tokenContractInstance = await createContractInstance(
+        tokenAbi,
+        'token',
+      );
+      const decimals = await tokenContractInstance.decimals();
       benData = await this.prisma.$transaction(async (tx) => {
         const data = await tx.beneficiary.findMany({
           where: {
@@ -583,7 +623,7 @@ export class DisbursementService {
       const benAddress = benData.map((d) => d.walletAddress);
       const amount = benData.map((d) => d.disbursementAmount || 0);
       const totalAmount = amount.reduce((acc, curr) => acc + curr, 0);
-      await this.forwardToCore(benAddress, amount, totalAmount);
+      await this.forwardToCore(benAddress, amount, totalAmount, decimals);
     } catch (err) {
       if (err.response?.status === 400 || err.response?.status === 404) {
         throw err;
@@ -607,8 +647,9 @@ export class DisbursementService {
 
   async forwardToCore(
     benAddress: string[],
-    amount: number[],
-    totalAmount: number,
+    amount: string[],
+    totalAmount: string,
+    decimal: number,
   ) {
     try {
       const projectId = process.env.PROJECT_ID;
@@ -634,6 +675,7 @@ export class DisbursementService {
             benAddress: benAddress,
             amount: amount,
             totalAmount: totalAmount,
+            decimal: Number(decimal),
             projectAddress: fundStorageContract,
           },
         },

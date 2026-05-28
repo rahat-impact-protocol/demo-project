@@ -23,6 +23,8 @@ import {
   VendorLoginDto,
 } from './dto/create-vendor.dto';
 import axios from 'axios';
+import { createContractInstance, parseAmount } from 'src/utils/transaction';
+import { tokenAbi } from 'src/utils/abi/token';
 
 @Injectable()
 export class VendorService {
@@ -270,6 +272,12 @@ export class VendorService {
 
   async claimCreate(vendorId: string, data: CreateClaimDto) {
     const { amount, benAddress } = data;
+
+    const tokenContractInstance = await createContractInstance(
+      tokenAbi,
+      'token',
+    );
+    const decimals = await tokenContractInstance.decimals();
     const vendor = await this.prisma.vendor.findUnique({
       where: {
         uuid: vendorId,
@@ -292,6 +300,7 @@ export class VendorService {
         name: 'contract',
       },
     });
+    const parsedAmount = await parseAmount(amount, decimals);
     const settings: any = contractSettings?.value;
     const tokenAddress = settings?.token?.address;
     const projectAddress = settings?.fundStorageContract?.address;
@@ -302,7 +311,8 @@ export class VendorService {
           projectAddress,
           benAddress,
           vendorAddress: vendor?.walletAddress,
-          amount,
+          amount: Number(parsedAmount),
+          decimal: Number(decimals),
           phoneNumber: beneficiaryDetails?.pii?.phone,
         },
       },
@@ -375,6 +385,11 @@ export class VendorService {
   }
 
   async redemptionApproval(redemptionId: string) {
+    const tokenContractInstance = await createContractInstance(
+      tokenAbi,
+      'token',
+    );
+    const decimals = await tokenContractInstance.decimals();
     // const { redemptionId } = data;
     const contractSettings = await this.prisma.settings.findUnique({
       where: {
@@ -399,13 +414,19 @@ export class VendorService {
       },
     });
 
+    if (!redemptionDetails) throw new Error('No redemption Details found');
+    const amount = redemptionDetails?.amount;
+
+    const parsedAmount = await parseAmount(amount?.toString(), decimals);
+
     const redemptionData = {
       requestData: {
         data: {
           tokenAddress,
           from: redemptionDetails?.vendor.walletAddress,
           to: projectAddress,
-          amount: redemptionDetails?.amount,
+          amount: Number(parsedAmount),
+          decimal: Number(decimals),
         },
       },
       serviceTags: ['redemptionApproval'],
