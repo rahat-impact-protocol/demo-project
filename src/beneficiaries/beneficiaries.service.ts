@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
@@ -349,6 +353,8 @@ export class BeneficiaryService {
           },
         },
       });
+      if (!benDetails)
+        throw new NotFoundException('No Beneficiary details found');
       const bendetails = {
         name: benDetails?.name,
         phone: phoneNumber,
@@ -376,11 +382,14 @@ export class BeneficiaryService {
           walletAddress: true,
         },
       });
+      if (!benDetails)
+        throw new NotFoundException('No Beneficiary details found');
       const bendetails = {
         name: benDetails?.pii?.name,
         phone: benDetails?.pii?.phone,
         walletAddress: benDetails?.walletAddress,
       };
+
       return bendetails;
     } catch (err) {
       throw err;
@@ -395,6 +404,13 @@ export class BeneficiaryService {
     benAddress: string,
     query: ListBeneficiaryTxnDto,
   ) {
+    const benDetails = await this.prisma.beneficiary.findFirst({
+      where: {
+        walletAddress: benAddress,
+      },
+    });
+    if (!benDetails)
+      throw new NotFoundException('No Beneficiary details found');
     const projectId = process.env.PROJECT_ID;
     const core = process.env.CORE_URL;
 
