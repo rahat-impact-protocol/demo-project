@@ -184,6 +184,7 @@ export class VendorService {
         phoneNumber: body.phoneNumber,
         email: body.email,
         walletAddress,
+        isApproved: false,
       },
     });
 
@@ -193,6 +194,27 @@ export class VendorService {
       body.authProvider,
       body.providerSubject,
     );
+  }
+
+  async approveVendor(vendorId: string) {
+    try {
+      const vendor = await this.prisma.vendor.findMany({
+        where: {
+          uuid: vendorId,
+        },
+      });
+      if (!vendor) throw new NotFoundException('No vendor found for approval');
+      return this.prisma.vendor.update({
+        where: {
+          uuid: vendorId,
+        },
+        data: {
+          isApproved: true,
+        },
+      });
+    } catch (err) {
+      throw new Error('Failed to approve vendor');
+    }
   }
 
   async loginVendor(body: VendorLoginDto) {
@@ -318,9 +340,8 @@ export class VendorService {
       },
       serviceTags: ['claimCreate'],
     };
-    console.log(claimCreateRequest);
 
-    return await this.forwardToCore(claimCreateRequest);
+    return this.forwardToCore(claimCreateRequest);
   }
 
   async verifyOtp(vendorId: string, data: any) {

@@ -27,6 +27,11 @@ export class VendorController {
     return this.vendorService.registerVendor(body);
   }
 
+  @Post('/approve/:vendorId')
+  async approveVendor(@Param('vendorId') vendorId: string) {
+    return this.vendorService.approveVendor(vendorId);
+  }
+
   @Post('/login')
   async loginVendor(@Body() body: VendorLoginDto) {
     return this.vendorService.loginVendor(body);

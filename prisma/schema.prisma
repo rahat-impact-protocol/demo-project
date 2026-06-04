@@ -42,12 +42,15 @@ model Beneficiary {
   walletAddress      String
   age                Int?
   gender             Gender                     @default(NOTAVAILABLE)
+  bankStatus         BankStatus                 @default(UNKNOWN)
+  extras             Json?                                    
   requestId          String?
   disbursementAmount Int?
   disbursementStatus DisbursementStatus         @default(NOTSTARTED)
   pii                BeneficiaryPii?            @relation("BeneficiaryToPii")
   group              BeneficiaryGroupMember?    @relation("BeneficiaryGroupMember")
   disbursement       BenDisbursement[]          @relation("BeneficiaryDisbursements")
+  vendor             VendorBen?                  @relation("VendorServedBen")
   communication      BeneficiaryCommunication[] @relation("BeneficiaryCommunication")
   createdAt          DateTime                   @default(now())
   updatedAt          DateTime?                  @updatedAt
@@ -110,14 +113,33 @@ model Vendor {
   phoneNumber   String?
   email         String    @unique()
   walletAddress String
+  isApproved    Boolean     @default(false)
   extras         Json?
   vendorRedemption VendorRedemptions[] @relation("VendorRedemptions")
   authSessions  VendorAuthSession[] @relation("VendorAuthSessions")
+  servedBen     VendorBen[] @relation("VendorBen")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime?
 
   @@map("tbl_vendor")
 
+}
+
+model VendorBen{
+  id            Int   @id @default(autoincrement()) @db.Integer()
+  vendorId      Int   
+  beneficiaryId Int   @unique()
+  claimCreated  Boolean @default(false)
+  otpVerified   Boolean @default(false)
+  totalServed   Int 
+  latestServedAmount  String?
+  vendor        Vendor  @relation("VendorBen", fields:[vendorId],references:[id])
+  beneficiary   Beneficiary @relation("VendorServedBen", fields:[beneficiaryId],references:[id])
+  createdAt     DateTime    @default(now())
+  latestServedAt  DateTime  @default(now())
+  updatedAt     DateTime    @updatedAt 
+
+  @@map("tbl_vendor_ben")
 }
 
 model VendorAuthSession {
@@ -261,4 +283,11 @@ enum Gender {
   FEMALE
   OTHER
   NOTAVAILABLE
+}
+
+
+enum BankStatus{
+  BANKED
+  UNBANKED
+  UNKNOWN
 }
