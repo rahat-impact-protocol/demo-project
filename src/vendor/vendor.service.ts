@@ -314,6 +314,7 @@ export class VendorService {
         pii: {
           select: { phone: true },
         },
+        id: true,
       },
     });
 
@@ -340,6 +341,23 @@ export class VendorService {
       },
       serviceTags: ['claimCreate'],
     };
+
+    if (beneficiaryDetails && vendor)
+      await this.prisma.vendorBen.upsert({
+        where: {
+          beneficiaryId: beneficiaryDetails?.id,
+        },
+        update: {
+          latestServedAmount: amount,
+          totalServed: { increment: 1 },
+        },
+        create: {
+          beneficiaryId: beneficiaryDetails?.id,
+          vendorId: vendor?.id,
+          latestServedAmount: amount,
+          totalServed: +1,
+        },
+      });
 
     return this.forwardToCore(claimCreateRequest);
   }

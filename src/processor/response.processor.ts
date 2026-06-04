@@ -99,11 +99,65 @@ export class ResponseProcessor extends WorkerHost {
   }
 
   private async processClaim(data: any) {
-    console.log(data);
+    const { status, responsePayload } = data;
+    let claimStatus = false;
+    const vendorAddress = responsePayload?.updateData?.vendorAddress ?? [];
+    const beneficiaryAddress = responsePayload?.updateData?.benAddress ?? [];
+    const vendor = await this.prisma.vendor.findFirst({
+      where: {
+        walletAddress: vendorAddress,
+      },
+    });
+
+    const beneficiary = await this.prisma.beneficiary.findFirst({
+      where: {
+        walletAddress: beneficiaryAddress,
+      },
+    });
+
+    if (status === 'suceess') {
+      claimStatus = true;
+    }
+    return this.prisma.vendorBen.update({
+      where: {
+        vendorId: vendor?.id,
+        beneficiaryId: beneficiary?.id,
+      },
+      data: {
+        claimCreated: claimStatus,
+      },
+    });
   }
 
   private async processVerifyOtp(data: any) {
-    console.log(data);
+    const { status, responsePayload } = data;
+    let otpStatus = false;
+    const vendorAddress = responsePayload?.updateData?.vendorAddress ?? [];
+    const beneficiaryAddress = responsePayload?.updateData?.benAddress ?? [];
+    const vendor = await this.prisma.vendor.findFirst({
+      where: {
+        walletAddress: vendorAddress,
+      },
+    });
+
+    const beneficiary = await this.prisma.beneficiary.findFirst({
+      where: {
+        walletAddress: beneficiaryAddress,
+      },
+    });
+
+    if (status === 'suceess') {
+      otpStatus = true;
+    }
+    return this.prisma.vendorBen.update({
+      where: {
+        vendorId: vendor?.id,
+        beneficiaryId: beneficiary?.id,
+      },
+      data: {
+        claimCreated: otpStatus,
+      },
+    });
   }
 
   private async processRedemptionRequest(data: any) {
