@@ -14,6 +14,7 @@ export class ReportService {
       totalBenDisbursed,
       totalBenAssignedToken,
       genderStats,
+      bankStats,
       benDisbursement,
     ] = await Promise.all([
       this.prisma.beneficiary.count(),
@@ -43,6 +44,12 @@ export class ReportService {
         },
       }),
       this.prisma.beneficiary.groupBy({
+        by: [Prisma.BeneficiaryScalarFieldEnum.bankStatus],
+        _count: {
+          id: true,
+        },
+      }),
+      this.prisma.beneficiary.groupBy({
         by: ['disbursementStatus'],
         _count: {
           id: true,
@@ -57,8 +64,14 @@ export class ReportService {
       NOTAVAILABLE: 0,
     };
 
+    const bankStatus: Record<string, number> = {};
+
     for (const stat of genderStats) {
       gender[stat.gender] = Number(stat._count.id ?? 0);
+    }
+
+    for (const stat of bankStats) {
+      bankStatus[stat.bankStatus] = Number(stat._count.id ?? 0);
     }
     const benDis: any = {};
 
@@ -68,6 +81,7 @@ export class ReportService {
 
     return {
       gender,
+      bankStatus,
       totalBen,
       totalBenAssignedToken,
       totalBenDisbursed,

@@ -48,6 +48,8 @@ export class BeneficiaryService {
           data: {
             walletAddress: benAddress,
             gender: createBeneficiaryDto?.gender,
+            age: createBeneficiaryDto?.age || 0,
+            bankStatus: createBeneficiaryDto?.bankStatus,
             pii: {
               create: {
                 name: createBeneficiaryDto?.name,
