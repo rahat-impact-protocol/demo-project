@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateVendorDto {
   @ApiProperty({ example: '0x1234', required: false })
@@ -75,22 +75,28 @@ export class UpdateVendorDto {
 }
 
 export class ListVendorDto {
-  @ApiProperty({ example: 'joe', required: false })
+  @ApiProperty({ example: '1', required: false })
   @IsString()
   @IsOptional()
   page?: string;
 
-  @ApiProperty({ example: '+977956', required: true })
+  @ApiProperty({ example: '10', required: false })
   @IsString()
+  @IsOptional()
   perPage?: string;
+
+  @ApiProperty({ example: 'true', required: false })
+  @IsOptional()
+  approved?: Boolean;
 
   @ApiProperty({ example: 'joe', required: false })
   @IsString()
   @IsOptional()
   name?: string;
 
-  @ApiProperty({ example: '+977956', required: true })
+  @ApiProperty({ example: '+977956', required: false })
   @IsString()
+  @IsOptional()
   phoneNumber?: string;
 
   @ApiProperty({ example: '0x22f456', required: false })
@@ -120,6 +126,18 @@ export class VerifyOtpDto {
 }
 
 export class ListVendorTxnDto {
+  @ApiProperty({ example: 1, required: false })
+  @IsString()
+  @IsOptional()
+  page?: string;
+
+  @ApiProperty({ example: 1, required: false })
+  @IsString()
+  @IsOptional()
+  perPage?: string;
+}
+
+export class PaginationDto {
   @ApiProperty({ example: 1, required: false })
   @IsString()
   @IsOptional()

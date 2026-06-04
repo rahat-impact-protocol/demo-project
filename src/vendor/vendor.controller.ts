@@ -12,7 +12,9 @@ import { VendorService } from './vendor.service';
 import {
   CreateClaimDto,
   CreateVendorDto,
+  ListVendorDto,
   ListVendorTxnDto,
+  PaginationDto,
   UpdateVendorDto,
   VendorLoginDto,
   VerifyOtpDto,
@@ -48,8 +50,16 @@ export class VendorController {
   }
 
   @Get()
-  async listVendor() {
-    return this.vendorService.listVendor();
+  async listVendor(@Query() query: ListVendorDto) {
+    return this.vendorService.listVendor(query);
+  }
+
+  @Get('/benServed/:vendorId')
+  async getBeneficiaryServed(
+    @Param('vendorId') vendorId: string,
+    @Query() query: PaginationDto,
+  ) {
+    return this.vendorService.getBeneficiaryServed(vendorId, query);
   }
 
   @Patch('/update/:id')

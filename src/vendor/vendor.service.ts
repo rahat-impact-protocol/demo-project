@@ -20,6 +20,7 @@ import {
   CreateClaimDto,
   CreateVendorDto,
   ListVendorTxnDto,
+  PaginationDto,
   VendorLoginDto,
 } from './dto/create-vendor.dto';
 import axios from 'axios';
@@ -243,14 +244,20 @@ export class VendorService {
     return vendor;
   }
 
-  async listVendor(
-    options: PaginateOptions = {},
-  ): Promise<PaginatedResult<any>> {
-    const page = Number(options.page) || 1;
-    const perPage = Number(options.perPage) || 10;
+  async listVendor(query: any): Promise<PaginatedResult<any>> {
+    let where;
+
+    const page = Number(query.page) || 1;
+    const perPage = Number(query.perPage) || 10;
+    if (query?.approved) {
+      where = {
+        isApproved: true,
+      };
+    }
+
     const skip = (page - 1) * perPage;
     const [data, total] = await Promise.all([
-      this.prisma.vendor.findMany({ skip, take: perPage }),
+      this.prisma.vendor.findMany({ where: where, skip, take: perPage }),
       this.prisma.vendor.count(),
     ]);
     const lastPage = Math.ceil(total / perPage);
@@ -488,6 +495,55 @@ export class VendorService {
     };
     const response = await axios.get(`${core}/request`, { params: txnRequest });
     return response.data;
+  }
+
+  async getBeneficiaryServed(vendorId: string, query?: PaginationDto) {
+    const page = Number(query?.page) || 1;
+    const perPage = Number(query?.perPage) || 10;
+    const skip = (page - 1) * perPage;
+
+    try {
+      const total = await this.prisma.vendorBen.count({
+        where: {
+          vendor: {
+            uuid: vendorId,
+          },
+        },
+      });
+      const benList = await this.prisma.vendorBen.findMany({
+        where: {
+          vendor: {
+            uuid: vendorId,
+          },
+        },
+        select: {
+          beneficiary: {
+            select: {
+              walletAddress: true,
+            },
+          },
+          latestServedAmount: true,
+          claimCreated: true,
+          otpVerified: true,
+        },
+        skip,
+        take: perPage,
+      });
+      const lastPage = Math.ceil(total / perPage);
+      return {
+        benList,
+        meta: {
+          total,
+          lastPage,
+          currentPage: page,
+          perPage,
+          prev: page > 1 ? page - 1 : null,
+          next: page < lastPage ? page + 1 : null,
+        },
+      };
+    } catch (err) {
+      throw new Error('Error while fetching beneficiary list');
+    }
   }
 
   async forwardToCore(data) {
