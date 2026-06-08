@@ -257,7 +257,12 @@ export class VendorService {
 
     const skip = (page - 1) * perPage;
     const [data, total] = await Promise.all([
-      this.prisma.vendor.findMany({ where: where, skip, take: perPage }),
+      this.prisma.vendor.findMany({
+        where: where,
+        skip,
+        take: perPage,
+        orderBy: { createdAt: 'desc' },
+      }),
       this.prisma.vendor.count(),
     ]);
     const lastPage = Math.ceil(total / perPage);

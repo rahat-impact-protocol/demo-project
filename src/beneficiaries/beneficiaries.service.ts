@@ -49,6 +49,7 @@ export class BeneficiaryService {
             walletAddress: benAddress,
             gender: createBeneficiaryDto?.gender,
             age: createBeneficiaryDto?.age || 0,
+            address: createBeneficiaryDto?.address,
             bankStatus: createBeneficiaryDto?.bankStatus,
             pii: {
               create: {
@@ -312,6 +313,7 @@ export class BeneficiaryService {
     const [data, total] = await Promise.all([
       this.prisma.beneficiary.findMany({
         skip,
+        orderBy: { createdAt: 'desc' },
         take: perPage,
         where,
         include: {

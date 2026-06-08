@@ -42,6 +42,7 @@ model Beneficiary {
   walletAddress      String
   age                Int?
   gender             Gender                     @default(NOTAVAILABLE)
+  address            String?
   bankStatus         BankStatus                 @default(UNKNOWN)
   extras             Json?                                    
   requestId          String?

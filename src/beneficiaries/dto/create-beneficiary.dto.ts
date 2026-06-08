@@ -42,6 +42,11 @@ export class CreateBeneficiaryDto {
   @IsOptional()
   email?: string;
 
+  @ApiProperty({ example: 'street1,ktm', required: false })
+  @IsString()
+  @IsOptional()
+  address?: string;
+
   @ApiProperty({ example: '{"id":"123"}', required: false })
   @IsObject()
   @IsOptional()
