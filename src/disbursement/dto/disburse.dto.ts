@@ -46,10 +46,15 @@ export class CreateDisbursementDto {
   @IsNumber()
   totalAmount?: number;
 
-  @ApiProperty({ example: 'test disbursement', required: false })
+  @ApiProperty({ example: 'test', required: false })
   @IsOptional()
   @IsString()
   name?: string;
+
+  @ApiProperty({ example: 'test disbursement', required: false })
+  @IsOptional()
+  @IsString()
+  details?: string;
 
   @ApiProperty({ example: 'test disbursement', required: false })
   @IsString()

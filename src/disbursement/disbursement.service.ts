@@ -27,6 +27,7 @@ export class DisbursementService {
     totalamount?: number,
     name?: string,
     type?: DisbursementType,
+    details?: string,
   ) {
     const totalBen = totalben || beneficiaryIds.length;
     const totalAmount = totalamount || amountPerBen * totalBen;
@@ -34,6 +35,7 @@ export class DisbursementService {
     return prisma.disbursement.create({
       data: {
         name,
+        details,
         type,
         amountPerBen,
         totalAmount,
@@ -186,6 +188,7 @@ export class DisbursementService {
       return this.prisma.disbursement.findMany({
         select: {
           name: true,
+          details: true,
           type: true,
           uuid: true,
           amountPerBen: true,
@@ -209,6 +212,7 @@ export class DisbursementService {
         select: {
           uuid: true,
           amountPerBen: true,
+          details: true,
           totalAmount: true,
           totalBen: true,
           createdAt: true,
@@ -219,6 +223,13 @@ export class DisbursementService {
                 select: {
                   walletAddress: true,
                   disbursementStatus: true,
+                  address: true,
+                  pii: {
+                    select: {
+                      name: true,
+                      phone: true,
+                    },
+                  },
                 },
               },
             },

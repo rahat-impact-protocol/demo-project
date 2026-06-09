@@ -108,14 +108,14 @@ export class BeneficiaryController {
     return this.beneficiaryGroupService.listGroups();
   }
 
-  @Patch('/group/update/:id')
-  async updateGroup(@Param('id') id: number, @Body() body: any) {
-    return this.beneficiaryGroupService.updateGroup(+id, body);
+  @Patch('/group/update/:uuid')
+  async updateGroup(@Param('uuid') uuid: string, @Body() body: any) {
+    return this.beneficiaryGroupService.updateGroup(uuid, body);
   }
 
-  @Get('/group/:id')
-  async getGroupById(@Param('id') id: number) {
-    return this.beneficiaryGroupService.getGroupById(+id);
+  @Get('/group/:uuid')
+  async getGroupByUui(@Param('uuid') uuid: string) {
+    return this.beneficiaryGroupService.getGroupById(uuid);
   }
 
   @Get('/transaction/:benAddress')

@@ -25,58 +25,136 @@ export class BeneficiaryGroupService {
     ]);
   }
 
-  async getGroupById(id: number) {
+  async getGroupById(uuid: string) {
     return this.prisma.beneficiaryGroup.findUnique({
-      where: { id },
-      //this is added by sushil
-      include: {
+      where: { uuid },
+      select: {
+        uuid: true,
+        name: true,
+        description: true,
         members: {
           include: {
             beneficiary: {
               include: {
-                pii: true, // <--- This pulls in the name, phone, email, etc.
+                pii: true,
               },
             },
           },
         },
       },
-      // include: { members: { include: { beneficiary: true } } },
     });
   }
 
   async listGroups() {
-    return this.prisma.beneficiaryGroup.findMany();
-  }
-
-  async updateGroup(id: number, data: { name?: string; description?: string }) {
-    return this.prisma.beneficiaryGroup.update({ where: { id }, data });
-  }
-
-  async deleteGroup(id: number) {
-    // Delete all group members first (to avoid FK constraint)
-    await this.prisma.beneficiaryGroupMember.deleteMany({
-      where: { groupId: id },
+    return this.prisma.beneficiaryGroup.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        uuid: true,
+        name: true,
+        description: true,
+        createdAt: true,
+        members: {
+          select: {
+            beneficiary: {
+              select: {
+                uuid: true,
+                walletAddress: true,
+                pii: {
+                  select: {
+                    name: true,
+                    phone: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
-    return this.prisma.beneficiaryGroup.delete({ where: { id } });
+  }
+
+  async updateGroup(
+    uuid: string,
+    data: { name?: string; description?: string },
+  ) {
+    return this.prisma.beneficiaryGroup.update({ where: { uuid }, data });
+  }
+
+  async deleteGroup(uuid: string) {
+    const groupDetails = await this.prisma.beneficiaryGroup.findUnique({
+      where: { uuid },
+    });
+
+    const tx = await this.prisma.$transaction(async (prisma) => {
+      prisma.beneficiaryGroupMember.deleteMany({
+        where: { groupId: groupDetails?.id },
+      });
+      prisma.beneficiaryGroup.delete({ where: { id: groupDetails?.id } });
+    });
+    return tx;
   }
 
   // Group membership management
-  async addBeneficiaryToGroup(groupId: number, beneficiaryId: number) {
-    return this.prisma.beneficiaryGroupMember.create({
-      data: { groupId, beneficiaryId },
+  async addBeneficiaryToGroup(groupUuid: string, beneficiaryUuid: string) {
+    const groupDetails = await this.prisma.beneficiaryGroup.findUnique({
+      where: { uuid: groupUuid },
     });
+    const benDetails = await this.prisma.beneficiary.findUnique({
+      where: { uuid: beneficiaryUuid },
+    });
+    if (groupDetails && benDetails)
+      return this.prisma.beneficiaryGroupMember.create({
+        data: { groupId: groupDetails?.id, beneficiaryId: benDetails?.id },
+      });
+    else throw new Error('Cannot add beneficiary to the group');
   }
 
-  async removeBeneficiaryFromGroup(groupId: number, beneficiaryId: number) {
-    return this.prisma.beneficiaryGroupMember.delete({
-      where: { groupId_beneficiaryId: { groupId, beneficiaryId } },
+  async removeBeneficiaryFromGroup(groupUuid: string, beneficiaryUuid: string) {
+    const groupDetails = await this.prisma.beneficiaryGroup.findUnique({
+      where: { uuid: groupUuid },
     });
+    const benDetails = await this.prisma.beneficiary.findUnique({
+      where: { uuid: beneficiaryUuid },
+    });
+    if (groupDetails && benDetails)
+      return this.prisma.beneficiaryGroupMember.delete({
+        where: {
+          groupId_beneficiaryId: {
+            groupId: groupDetails?.id,
+            beneficiaryId: benDetails?.id,
+          },
+        },
+      });
+    else throw new Error('Cannot add beneficiary to the group');
   }
 
-  async listGroupMembers(groupId: number) {
-    return this.prisma.beneficiaryGroupMember.findMany({
-      where: { groupId },
-      include: { beneficiary: true },
+  async listGroupMembers(groupUuid: string) {
+    return this.prisma.beneficiaryGroup.findUnique({
+      where: { uuid: groupUuid },
+      include: {
+        members: {
+          include: {
+            beneficiary: {
+              select: {
+                uuid: true,
+                walletAddress: true,
+                address: true,
+                age: true,
+                pii: {
+                  select: {
+                    name: true,
+                    phone: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
+    // return this.prisma.beneficiaryGroupMember.findMany({
+    //   where: {  },
+    //   include: { beneficiary: true },
+    // });
   }
 }

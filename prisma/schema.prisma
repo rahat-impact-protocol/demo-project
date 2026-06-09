@@ -63,6 +63,7 @@ model Disbursement {
   id              Int               @id @default(autoincrement()) @db.Integer()
   uuid            String            @unique @default(uuid())
   name            String?
+  details         String ?
   type            DisbursementType? @default(Cash)
   totalAmount     Int
   amountPerBen    Int

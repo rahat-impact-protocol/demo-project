@@ -316,7 +316,16 @@ export class BeneficiaryService {
         orderBy: { createdAt: 'desc' },
         take: perPage,
         where,
-        include: {
+        select: {
+          uuid: true,
+          walletAddress: true,
+          age: true,
+          gender: true,
+          address: true,
+          bankStatus: true,
+          disbursementAmount: true,
+          disbursementStatus: true,
+          createdAt: true,
           pii: {
             select: {
               name: true,
@@ -353,6 +362,7 @@ export class BeneficiaryService {
           beneficiary: {
             select: {
               walletAddress: true,
+              uuid: true,
             },
           },
         },
@@ -383,6 +393,7 @@ export class BeneficiaryService {
               phone: true,
             },
           },
+          uuid: true,
           walletAddress: true,
         },
       });
