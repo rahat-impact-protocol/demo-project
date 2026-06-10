@@ -28,21 +28,30 @@ import {
 
 export class CreateCommunication {
   @ApiProperty({
-    example: '[232-4444-423-654,1314-765-9876-12345]',
+    example: ['232-4444-423-654,1314-765-9876-1234'],
     required: false,
+    type: [String],
   })
   @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
   benIds?: string[];
 
-  @ApiProperty({ example: '[232-4444-423-654]', required: false })
+  @ApiProperty({
+    example: ['232-4444-423-654'],
+    required: false,
+    type: [String],
+  })
   @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
   groupId?: string[];
 
   @ApiProperty({ example: 'this is test message', required: true })
   @IsString()
   message!: string;
 
-  @ApiProperty({ example: 'sms', required: true })
+  @ApiProperty({ example: 'SMS', required: true })
   @IsString()
   type!: CommunicationType;
 }
@@ -101,6 +110,7 @@ export class ListCommunicationQueryDto {
     default: 20,
   })
   @IsString()
+  @IsOptional()
   limit?: string;
 
   @ApiPropertyOptional({

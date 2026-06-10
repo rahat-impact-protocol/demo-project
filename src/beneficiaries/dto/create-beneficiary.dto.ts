@@ -6,6 +6,9 @@ import {
   IsJSON,
   IsEnum,
   IsObject,
+  IsArray,
+  ArrayNotEmpty,
+  IsUUID,
 } from 'class-validator';
 
 export class CreateBeneficiaryDto {
@@ -62,9 +65,18 @@ export class CreateBeneficiaryGroupDto {
   @IsString()
   description!: string;
 
-  @ApiProperty({ example: '[1,2,3]', required: true })
-  @IsString()
-  beneficiariesId!: number[];
+  @ApiProperty({
+    type: [String],
+    example: [
+      'a0d66cde-91e5-49c1-b1d6-54f543eabb83',
+      '0a23d348-d36a-4baf-a234-4d127ef9aba3',
+    ],
+    required: true,
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsUUID('4', { each: true })
+  beneficiariesId!: string[];
 }
 
 export class ListBeneficiaryDto {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBeneficiaryGroupDto } from './dto/create-beneficiary.dto';
 
@@ -8,21 +8,47 @@ export class BeneficiaryGroupService {
 
   // Beneficiary Group CRUD
   async createGroup(data: CreateBeneficiaryGroupDto) {
-    return this.prisma.$transaction([
-      this.prisma.beneficiaryGroup.create({
-        data: {
-          name: data?.name,
-          description: data?.description,
-          members: {
-            createMany: {
-              data: data.beneficiariesId.map((id: number) => ({
-                beneficiaryId: id,
-              })),
-            },
+    const beneficiaryUuids = [...new Set(data?.beneficiariesId || [])];
+
+    if (!beneficiaryUuids.length) {
+      throw new BadRequestException(
+        'beneficiariesId must contain at least one beneficiary UUID',
+      );
+    }
+
+    const benDetails = await this.prisma.beneficiary.findMany({
+      where: {
+        uuid: { in: beneficiaryUuids },
+      },
+      select: {
+        id: true,
+        uuid: true,
+      },
+    });
+
+    if (benDetails.length !== beneficiaryUuids.length) {
+      const foundUuids = new Set(benDetails.map((ben) => ben.uuid));
+      const missingUuids = beneficiaryUuids.filter(
+        (uuid) => !foundUuids.has(uuid),
+      );
+      throw new BadRequestException(
+        `Some beneficiaries were not found: ${missingUuids.join(', ')}`,
+      );
+    }
+
+    return this.prisma.beneficiaryGroup.create({
+      data: {
+        name: data?.name,
+        description: data?.description,
+        members: {
+          createMany: {
+            data: benDetails.map((ben) => ({
+              beneficiaryId: ben.id,
+            })),
           },
         },
-      }),
-    ]);
+      },
+    });
   }
 
   async getGroupById(uuid: string) {
