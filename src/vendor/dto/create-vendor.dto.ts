@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBooleanString } from 'class-validator';
 
 export class CreateVendorDto {
   @ApiProperty({ example: '0x1234', required: false })
@@ -86,8 +86,9 @@ export class ListVendorDto {
   perPage?: string;
 
   @ApiProperty({ example: 'true', required: false })
+  @IsBooleanString()
   @IsOptional()
-  approved?: Boolean;
+  approved?: string;
 
   @ApiProperty({ example: 'joe', required: false })
   @IsString()

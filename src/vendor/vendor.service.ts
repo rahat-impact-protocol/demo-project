@@ -19,6 +19,7 @@ import {
 import {
   CreateClaimDto,
   CreateVendorDto,
+  ListVendorDto,
   ListVendorTxnDto,
   PaginationDto,
   VendorLoginDto,
@@ -46,6 +47,24 @@ export class VendorService {
 
   private hashAccessToken(accessToken: string) {
     return createHash('sha256').update(accessToken).digest('hex');
+  }
+
+  private parseBooleanQuery(value: unknown): boolean | undefined {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (normalized === 'true') {
+        return true;
+      }
+      if (normalized === 'false') {
+        return false;
+      }
+    }
+
+    return undefined;
   }
 
   private async createVendorSession(
@@ -244,26 +263,41 @@ export class VendorService {
     return vendor;
   }
 
-  async listVendor(query: any): Promise<PaginatedResult<any>> {
-    let where;
-
+  async listVendor(query: ListVendorDto): Promise<PaginatedResult<any>> {
     const page = Number(query.page) || 1;
     const perPage = Number(query.perPage) || 10;
-    if (query?.approved) {
-      where = {
-        isApproved: true,
-      };
-    }
+    const hasNameFilter = Boolean(query?.name?.trim());
+    const hasPhoneFilter = Boolean(query?.phoneNumber?.trim());
+    const approvedFilter = this.parseBooleanQuery(query?.approved);
+    const hasApprovedFilter = approvedFilter !== undefined;
+
+    const where =
+      hasNameFilter || hasPhoneFilter || hasApprovedFilter
+        ? {
+            ...(hasNameFilter
+              ? {
+                  name: {
+                    contains: query?.name?.trim(),
+                    mode: 'insensitive' as const,
+                  },
+                }
+              : {}),
+            ...(hasPhoneFilter
+              ? { phoneNumber: { contains: query?.phoneNumber?.trim() } }
+              : {}),
+            ...(hasApprovedFilter ? { isApproved: approvedFilter } : {}),
+          }
+        : undefined;
 
     const skip = (page - 1) * perPage;
     const [data, total] = await Promise.all([
       this.prisma.vendor.findMany({
-        where: where,
+        where,
         skip,
         take: perPage,
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.vendor.count(),
+      this.prisma.vendor.count({ where }),
     ]);
     const lastPage = Math.ceil(total / perPage);
     return {
