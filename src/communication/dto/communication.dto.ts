@@ -61,6 +61,12 @@ export class CreateCommunication {
   type!: CommunicationType;
 }
 
+export class UpdateCommunication {
+  @ApiProperty({ example: 'this is test message', required: true })
+  @IsString()
+  message!: string;
+}
+
 export class SendCommunication {
   @ApiProperty({
     example: '1234-546-2435-345',

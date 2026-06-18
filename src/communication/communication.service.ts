@@ -5,6 +5,7 @@ import {
   CommunicationHistoryQueryDto,
   CreateCommunication,
   ListCommunicationQueryDto,
+  UpdateCommunication,
 } from './dto/communication.dto';
 import { BeneficiaryType } from '@prisma/client';
 
@@ -255,7 +256,7 @@ export class CommunicationService {
     }
   }
 
-  async updateSms(id: string, data: CreateCommunication) {
+  async updateSms(id: string, data: UpdateCommunication) {
     if (!id || !data) {
       throw new BadRequestException(
         'communicationId or update data is required',
@@ -279,7 +280,6 @@ export class CommunicationService {
         },
       });
       const upp = updated;
-      console.log(upp, 'this is upp');
       return upp;
     } catch (err) {
       throw err;

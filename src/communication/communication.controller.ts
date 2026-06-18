@@ -11,6 +11,7 @@ import {
   CommunicationHistoryQueryDto,
   CreateCommunication,
   ListCommunicationQueryDto,
+  UpdateCommunication,
 } from './dto/communication.dto';
 import { CommunicationService } from './communication.service';
 
@@ -34,7 +35,7 @@ export class CommunicationController {
   }
 
   @Patch(':id')
-  async updateSms(@Param('id') id: string, @Body() data: CreateCommunication) {
+  async updateSms(@Param('id') id: string, @Body() data: UpdateCommunication) {
     return this.communicationService.updateSms(id, data);
   }
 
