@@ -191,6 +191,7 @@ model BeneficiaryGroupMember {
 model Communication {
   id          Int                 @id @default(autoincrement())
   uuid        String              @unique @default(uuid())
+  name        String?
   message     String
   status      CommunicationStatus @default(CREATED)
   type        CommunicationType   @default(SMS)

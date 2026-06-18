@@ -69,12 +69,12 @@ export class CommunicationService {
           },
         });
       }
-
       const communicationLog = await this.prisma.communication.create({
         data: {
           message: message,
           type: type,
           benType: benType,
+          name: data?.name,
           benCommunication: {
             create: beneficiaries.map((d) => ({
               benId: d?.id,
@@ -128,6 +128,7 @@ export class CommunicationService {
       },
       select: {
         uuid: true,
+        name: true,
         message: true,
         status: true,
         type: true,
@@ -159,6 +160,7 @@ export class CommunicationService {
     // Format the response
     const data = communications.map((comm) => ({
       uuid: comm.uuid,
+      name: comm?.name,
       message: comm.message,
       status: comm.status,
       type: comm.type,
@@ -302,6 +304,7 @@ export class CommunicationService {
             communication: {
               select: {
                 uuid: true,
+                name: true,
                 message: true,
                 status: true,
                 type: true,
@@ -325,6 +328,7 @@ export class CommunicationService {
         },
         select: {
           uuid: true,
+          name: true,
           message: true,
           status: true,
           benType: true,

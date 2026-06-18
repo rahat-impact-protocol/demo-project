@@ -51,6 +51,11 @@ export class CreateCommunication {
   @IsString()
   message!: string;
 
+  @ApiProperty({ example: 'test communication', required: false })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
   @ApiProperty({ example: 'SMS', required: true })
   @IsString()
   type!: CommunicationType;
