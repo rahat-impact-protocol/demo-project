@@ -55,7 +55,8 @@ export class DisbursementService {
   async createDisbursement(payload: CreateDisbursementDto) {
     console.log(payload);
     try {
-      const { benAddress, amount, totalAmount, totalBen, name, type } = payload;
+      const { benAddress, amount, totalAmount, totalBen, name, type, details } =
+        payload;
 
       const disbursement = await this.prisma.$transaction(async (tx) => {
         const beneficiaries = await tx.beneficiary.findMany({
@@ -87,6 +88,7 @@ export class DisbursementService {
           totalAmount,
           name,
           type,
+          details,
         );
 
         await tx.beneficiary.updateMany({
@@ -196,6 +198,9 @@ export class DisbursementService {
           totalBen: true,
           createdAt: true,
           updatedAt: true,
+        },
+        orderBy: {
+          updatedAt: 'desc',
         },
       });
     } catch (err) {
