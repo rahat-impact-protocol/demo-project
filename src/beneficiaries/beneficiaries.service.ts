@@ -33,9 +33,17 @@ export class BeneficiaryService {
         phone: createBeneficiaryDto?.phone,
       },
     });
+    const existingWallet = await this.prisma.beneficiary.findFirst({
+      where: {
+        walletAddress: walletAddress,
+      },
+    });
 
     if (existingBen) {
       throw new BadRequestException('Phone number already exists');
+    }
+    if (existingWallet) {
+      throw new BadRequestException('Wallet Address already exists');
     }
 
     if (!walletAddress) {
