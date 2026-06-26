@@ -308,7 +308,7 @@ export class CommunicationService {
         status: 'success',
         message: 'Communication execution initiated',
         communicationUuid: id,
-        data: response,
+        // data: response,
       };
     } catch (err) {
       throw err;
