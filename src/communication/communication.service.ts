@@ -13,6 +13,56 @@ import { BeneficiaryType } from '@prisma/client';
 export class CommunicationService {
   constructor(private prisma: PrismaService) {}
 
+  private async getBroadcastConfigFromDb(): Promise<{
+    url: string;
+    appId: string;
+    transportId: string;
+  }> {
+    const transportSettings = await this.prisma.settings.findUnique({
+      where: {
+        name: 'transportSettings',
+      },
+    });
+    const settings: any = transportSettings?.value;
+
+    const appId = settings?.appId;
+    const url = settings?.url;
+    const transportId = settings?.transportId;
+    return {
+      url,
+      appId,
+      transportId,
+    };
+  }
+
+  private async sendBroadcastRequest(message: string, addresses: string[]) {
+    const { url, appId, transportId } = await this.getBroadcastConfigFromDb();
+    const broadcastUrl = url ?? 'https://connect.rumsan.net/api/v1/broadcasts';
+
+    const payload = {
+      transport: transportId,
+      message: {
+        content: message,
+        meta: {
+          url: 'test1',
+        },
+      },
+      addresses,
+      maxAttempts: 5,
+      trigger: 'IMMEDIATE',
+      webhook: '',
+      options: {},
+    };
+    const response = await axios.post(broadcastUrl, payload, {
+      headers: {
+        'app-id': appId,
+        'content-type': 'application/json',
+      },
+    });
+
+    return response.data;
+  }
+
   async createCommunication(data: CreateCommunication) {
     const { benIds, message, groupId, type } = data;
     const hasGroupIds = groupId && groupId.length > 0;
@@ -236,20 +286,29 @@ export class CommunicationService {
         (recipient): recipient is { benUuid: string; phone: string } =>
           !!recipient.phone,
       );
-      console.log(withPhone);
       if (withPhone.length === 0) {
         throw new BadRequestException(`No phone number found`);
       }
-      const response = await this.forwardToCore(
-        withPhone.map((recipient) => recipient.phone),
+
+      const response = await this.sendBroadcastRequest(
         communication.message,
-        'sendSms',
+        withPhone.map((recipient) => recipient.phone),
       );
+
+      await this.prisma.communication.update({
+        where: { uuid: id },
+        data: {
+          status: 'SENDING',
+          sentAt: new Date(),
+          responseDetails: response,
+        },
+      });
+
       return {
         status: 'success',
-        message: 'SMS execution initiated',
-        smsUuid: id,
-        data: response,
+        message: 'Communication execution initiated',
+        communicationUuid: id,
+        // data: response,
       };
     } catch (err) {
       throw err;
@@ -262,7 +321,6 @@ export class CommunicationService {
         'communicationId or update data is required',
       );
     }
-    console.log(id, data);
     try {
       const updateData: any = {};
       const message = (data as any).details?.message ?? data.message;

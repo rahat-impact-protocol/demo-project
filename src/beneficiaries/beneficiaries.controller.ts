@@ -98,7 +98,10 @@ export class BeneficiaryController {
     file: Multer.File,
   ) {
     const groupName = file.originalname
-      ? `Imported Group - ${file.originalname.replace(/\.[^/.]+$/, '')}`
+      ? file.originalname
+          .split(/[\\/]/)
+          .pop()!
+          .replace(/\.[^/.]+$/, '')
       : undefined;
     return this.beneficiaryService.uploadFromCsvAsGroup(file.buffer, groupName);
   }
