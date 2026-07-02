@@ -195,6 +195,9 @@ export class BeneficiaryService {
         email: row['email'] || undefined,
         walletAddress:
           row['walletaddress'] || row['walletAddress'] || undefined,
+        age: ageVal,
+        gender: row['gender'],
+        address: row['address'],
         extras: ageVal !== undefined ? ({ age: ageVal } as any) : undefined,
       };
 
